@@ -25,7 +25,7 @@ const Courses = () => {
 
   useEffect(() => {
     fetchCourses()
-  }, [searchTerm, selectedDepartment, selectedSemester])
+  }, [searchTerm])
 
   const fetchCourses = async (page = 1) => {
     try {
@@ -33,9 +33,7 @@ const Courses = () => {
       const params = {
         page,
         limit: 12,
-        search: searchTerm,
-        department: selectedDepartment,
-        semester: selectedSemester
+        search: searchTerm
       }
 
       const response = await coursesAPI.getAll(params)
@@ -319,23 +317,11 @@ const Courses = () => {
               />
             </div>
             
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="input bg-white/50 backdrop-blur-sm border-white/30 focus:border-green-300 focus:ring-green-200"
-            >
-              <option value="">All Departments</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-            
             <div className="flex items-center justify-end">
-              {(searchTerm || selectedDepartment) && (
+              {searchTerm && (
                 <button
                   onClick={() => {
                     setSearchTerm('')
-                    setSelectedDepartment('')
                   }}
                   className="btn btn-outline text-sm px-4 py-2"
                 >
@@ -346,7 +332,7 @@ const Courses = () => {
             </div>
           </div>
           
-          {(searchTerm || selectedDepartment) && (
+          {searchTerm && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
               <div className="text-sm text-gray-600">
                 {pagination.totalCount > 0 
@@ -526,15 +512,15 @@ const Courses = () => {
             <BookOpen className="h-12 w-12 text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchTerm || selectedDepartment ? 'No courses found' : 'No courses available'}
+            {searchTerm ? 'No courses found' : 'No courses available'}
           </h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            {searchTerm || selectedDepartment
+            {searchTerm
               ? 'No courses match your current filters. Try adjusting your search criteria.'
               : 'No courses have been added to the system yet.'
             }
           </p>
-          {user?.role === 'admin' && !(searchTerm || selectedDepartment) && (
+          {user?.role === 'admin' && !searchTerm && (
             <button 
               onClick={handleCreateCourse}
               className="btn btn-primary"

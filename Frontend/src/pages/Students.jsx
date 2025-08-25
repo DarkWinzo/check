@@ -20,7 +20,7 @@ const Students = () => {
 
   useEffect(() => {
     fetchStudents()
-  }, [searchTerm, courseFilter])
+  }, [searchTerm])
 
   const fetchStudents = async (page = 1) => {
     try {
@@ -28,8 +28,7 @@ const Students = () => {
       const params = {
         page,
         limit: 10,
-        search: searchTerm,
-        course: courseFilter
+        search: searchTerm
       }
 
       const response = await studentsAPI.getAll(params)
@@ -159,7 +158,7 @@ const Students = () => {
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative flex-1 max-w-md">
+            <div className="relative lg:col-span-2">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -172,22 +171,11 @@ const Students = () => {
               />
             </div>
             
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Filter by course name or code..."
-                value={courseFilter}
-                onChange={(e) => setCourseFilter(e.target.value)}
-                className="input w-full bg-white/50 backdrop-blur-sm border-white/30 focus:border-blue-300 focus:ring-blue-200"
-              />
-            </div>
-            
             <div className="flex items-center justify-end lg:col-span-2">
-              {(searchTerm || courseFilter) && (
+              {searchTerm && (
                 <button
                   onClick={() => {
                     setSearchTerm('')
-                    setCourseFilter('')
                   }}
                   className="btn btn-outline text-sm px-4 py-2"
                 >
@@ -198,7 +186,7 @@ const Students = () => {
             </div>
           </div>
           
-          {(searchTerm || courseFilter) && (
+          {searchTerm && (
             <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
               <div className="text-sm text-gray-600">
                 {pagination.totalCount > 0 
@@ -428,15 +416,15 @@ const Students = () => {
             <Users className="h-12 w-12 text-gray-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            {searchTerm || courseFilter ? 'No students found' : 'No students yet'}
+            {searchTerm ? 'No students found' : 'No students yet'}
           </h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            {searchTerm || courseFilter
+            {searchTerm
               ? 'No students match your current filters. Try adjusting your search criteria.'
               : 'Get started by adding your first student to the system.'
             }
           </p>
-          {user?.role === 'admin' && !(searchTerm || courseFilter) && (
+          {user?.role === 'admin' && !searchTerm && (
             <button 
               onClick={handleCreateStudent}
               className="btn btn-primary"

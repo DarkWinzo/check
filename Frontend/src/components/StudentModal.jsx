@@ -65,11 +65,13 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       console.log('Registration response:', response.data)
       
       // Handle both old and new response formats
-      const registrations = response.data?.data || response.data || []
+      const registrations = Array.isArray(response.data?.data) ? response.data.data : 
+                           Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
       console.log('Set registrations:', registrations)
     } catch (error) {
       console.error('Error fetching student registrations:', error)
+      // Don't show error for empty registrations
       setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)

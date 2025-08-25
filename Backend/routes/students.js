@@ -293,20 +293,23 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
       order: [['registration_date', 'DESC']]
     });
 
-    console.log(`Found ${registrations.length} registrations for student ${studentId}`);
+    console.log(`Found ${registrations ? registrations.length : 0} registrations for student ${studentId}`);
     
+    // Always return success with data array
     res.json({
       success: true,
       data: registrations || [],
-      count: registrations.length
+      count: registrations ? registrations.length : 0
     });
 
   } catch (error) {
     console.error('Error fetching student registrations:', error);
+    // Return empty array instead of error for better UX
     res.status(500).json({ 
       success: false,
       message: 'Server error fetching registrations', 
       data: [],
+      count: 0,
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
