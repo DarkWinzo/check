@@ -36,7 +36,9 @@ const Dashboard = () => {
     totalCourses: 0,
     totalRegistrations: 0,
     activeStudents: 0,
-    availableCourses: 0
+    availableCourses: 0,
+    myRegistrations: 0,
+    completedCourses: 0
   })
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
@@ -90,80 +92,106 @@ const Dashboard = () => {
       
       if (user?.role === 'admin') {
         try {
-          const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-            studentsAPI.getAll({ limit: 100 }).catch((error) => {
-              console.error('Error fetching students:', error);
-              return { data: { pagination: { totalCount: 0 }, students: [] } };
-            }),
-            coursesAPI.getAll({ limit: 100 }).catch((error) => {
-              console.error('Error fetching courses:', error);
-              return { data: { pagination: { totalCount: 0 }, courses: [] } };
-            }),
-            registrationsAPI.getAll({ limit: 10 }).catch((error) => {
-              console.error('Error fetching registrations:', error);
-              return { data: { pagination: { totalCount: 0 }, registrations: [] } };
-            })
-          ])
-
-          setStats({
-            totalStudents: studentsRes.data.pagination?.totalCount || 0,
-            totalCourses: coursesRes.data.pagination?.totalCount || 0,
-            totalRegistrations: registrationsRes.data.pagination?.totalCount || 0,
-            activeStudents: studentsRes.data.students?.filter(s => s.status === 'active').length || 0
+          // Fetch admin data with better error handling
+          const studentsRes = await studentsAPI.getAll({ limit: 100 }).catch((error) => {
+            console.warn('Error fetching students:', error.message);
+            return { data: { pagination: { totalCount: 0 }, students: [] } };
+          })
+          
+          const coursesRes = await coursesAPI.getAll({ limit: 100 }).catch((error) => {
+            console.warn('Error fetching courses:', error.message);
+            return { data: { pagination: { totalCount: 0 }, courses: [] } };
+          })
+          
+          const registrationsRes = await registrationsAPI.getAll({ limit: 10 }).catch((error) => {
+            console.warn('Error fetching registrations:', error.message);
+            return { data: { pagination: { totalCount: 0 }, registrations: [] } };
           })
 
-          setRecentActivity(registrationsRes.data.registrations?.slice(0, 5) || [])
+          const studentsData = studentsRes.data || {}
+          const coursesData = coursesRes.data || {}
+          const registrationsData = registrationsRes.data || {}
+
+          setStats({
+            totalStudents: studentsData.pagination?.totalCount || 0,
+            totalCourses: coursesData.pagination?.totalCount || 0,
+            totalRegistrations: registrationsData.pagination?.totalCount || 0,
+            activeStudents: studentsData.students?.filter(s => s.status === 'active').length || 0,
+            availableCourses: coursesData.courses?.filter(c => c.status === 'active').length || 0,
+            myRegistrations: 0,
+            completedCourses: 0
+          })
+
+          setRecentActivity(registrationsData.registrations?.slice(0, 5) || [])
         } catch (error) {
           console.error('Error fetching admin data:', error);
+          setError('Failed to load admin dashboard data. Some features may be limited.')
+          // Set default stats even on error
           setStats({
             totalStudents: 0,
             totalCourses: 0,
             totalRegistrations: 0,
-            activeStudents: 0
-          })
-          setRecentActivity([])
-          setError('Failed to load admin dashboard data')
-        }
-      } else {
-        try {
-          const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch((error) => {
-            console.error('Error fetching courses for student:', error);
-            return { data: { pagination: { totalCount: 0 }, courses: [] } };
-          })
-          
-          // For students, also try to get their registrations
-          let myRegistrations = []
-          try {
-            // Get current student profile first
-            const studentProfile = await studentsAPI.getById('me').catch(() => null)
-            if (studentProfile?.data) {
-              const registrationsRes = await studentsAPI.getRegistrations(studentProfile.data.id).catch(() => ({ data: { data: [] } }))
-              myRegistrations = registrationsRes.data?.data || []
-            }
-          } catch (error) {
-            console.error('Error fetching student registrations:', error);
-          }
-          
-          setStats({
-            totalCourses: coursesRes.data.pagination?.totalCount || 0,
-            availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0,
-            myRegistrations: myRegistrations.length || 0,
-            completedCourses: myRegistrations.filter(r => r.status === 'completed').length || 0
-          })
-        } catch (error) {
-          console.error('Error fetching student data:', error);
-          setStats({
-            totalCourses: 0,
+            activeStudents: 0,
             availableCourses: 0,
             myRegistrations: 0,
             completedCourses: 0
           })
-          setError('Failed to load student dashboard data')
+          setRecentActivity([])
+        }
+      } else {
+        try {
+          // Fetch student data with better error handling
+          const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch((error) => {
+            console.warn('Error fetching courses for student:', error.message);
+            return { data: { pagination: { totalCount: 0 }, courses: [] } };
+          })
+          
+          // For students, try to get their registrations
+          let myRegistrations = []
+          let completedCount = 0
+          
+          try {
+            const studentProfile = await studentsAPI.getById('me').catch(() => null)
+            if (studentProfile?.data) {
+              const registrationsRes = await studentsAPI.getRegistrations(studentProfile.data.id).catch(() => ({ data: { data: [] } }))
+              myRegistrations = registrationsRes.data?.data || []
+              completedCount = myRegistrations.filter(r => r.status === 'completed').length || 0
+            }
+          } catch (error) {
+            console.warn('Error fetching student registrations:', error.message);
+          }
+          
+          const coursesData = coursesRes.data || {}
+          
+          setStats({
+            totalStudents: 0,
+            totalCourses: coursesData.pagination?.totalCount || 0,
+            totalRegistrations: 0,
+            activeStudents: 0,
+            availableCourses: coursesData.courses?.filter(c => c.status === 'active').length || 0,
+            myRegistrations: myRegistrations.length || 0,
+            completedCourses: completedCount
+          })
+          
+          setRecentActivity([])
+        } catch (error) {
+          console.error('Error fetching student data:', error);
+          setError('Failed to load student dashboard data. Some features may be limited.')
+          setStats({
+            totalStudents: 0,
+            totalCourses: 0,
+            totalRegistrations: 0,
+            activeStudents: 0,
+            availableCourses: 0,
+            myRegistrations: 0,
+            completedCourses: 0
+          })
         }
       }
       setDataLoaded(true)
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setError('Failed to load dashboard data. Please try refreshing the page.')
       setStats({
         totalStudents: 0,
         totalCourses: 0,
@@ -173,7 +201,6 @@ const Dashboard = () => {
         myRegistrations: 0,
         completedCourses: 0
       })
-      setError('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
@@ -268,6 +295,7 @@ const Dashboard = () => {
     </div>
   )
 
+  // Show loading screen only on initial load
   if (loading && !dataLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -303,7 +331,7 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <h1 className="text-3xl lg:text-4xl font-bold">
-                    Welcome back, {user?.email?.split('@')[0]}! 👋
+                    Welcome back, {user?.email?.split('@')[0] || 'User'}! 👋
                   </h1>
                   <p className="text-white/80 text-lg mt-1">
                     {user?.role === 'admin' ? 'System Administrator' : 'Student Portal'}
@@ -419,7 +447,7 @@ const Dashboard = () => {
               <Activity className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-red-800">Dashboard Error</h3>
+              <h3 className="text-lg font-semibold text-red-800">Dashboard Notice</h3>
               <p className="text-red-600">{error}</p>
               <button 
                 onClick={() => {
@@ -478,7 +506,7 @@ const Dashboard = () => {
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <RechartsPieChart>
-                  <Pie
+                  <RechartsPieChart.Pie
                     data={studentStatusData}
                     cx="50%"
                     cy="50%"
@@ -490,7 +518,7 @@ const Dashboard = () => {
                     {studentStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
-                  </Pie>
+                  </RechartsPieChart.Pie>
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'white', 
