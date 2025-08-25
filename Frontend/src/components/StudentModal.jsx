@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, User, Mail, Phone, Calendar, MapPin, Save, Eye, Edit, BookOpen } from 'lucide-react'
+import { X, User, Mail, Phone, Calendar, MapPin, Save, Eye, Edit, BookOpen, Plus } from 'lucide-react'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import LoadingSpinner from './LoadingSpinner'
@@ -381,7 +381,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               {/* Course Enrollment (only for create mode) */}
               {mode === 'create' && (
                 <>
-                <div className="lg:col-span-3">
+                <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Enroll in Courses (Optional)
                   </label>
@@ -430,7 +430,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </>
               )}
               {/* Address */}
-              <div className="lg:col-span-3">
+              <div className="md:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Address
                 </label>
@@ -448,7 +448,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
 
               {/* Current Registrations (only for view/edit mode) */}
               {(mode === 'view' || mode === 'edit') && student && (
-                <div className="lg:col-span-3">
+                <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <div className="flex items-center justify-between">
                       <span>Current Course Registrations</span>
@@ -557,7 +557,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               
               {/* Course Selection Modal for Edit Mode */}
               {showCourseSelection && (
-                <div className="lg:col-span-3">
+                <div className="md:col-span-2 lg:col-span-3">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-sm font-semibold text-blue-900">Add Courses</h4>
