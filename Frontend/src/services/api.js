@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-// More robust API URL detection
+// Enhanced API URL detection for both localhost and network host
 const getApiBaseUrl = () => {
   // Check for explicit environment variable first
   if (import.meta.env.VITE_API_URL) {
@@ -12,16 +12,12 @@ const getApiBaseUrl = () => {
     return '/api';
   }
   
-  // In development, try to detect the correct localhost
+  // In development, detect current host and use appropriate backend URL
   const currentHost = window.location.hostname;
   const apiPort = '5000';
   
-  if (currentHost === '127.0.0.1' || currentHost === 'localhost') {
-    return `http://${currentHost}:${apiPort}/api`;
-  }
-  
-  // Fallback
-  return 'http://localhost:5000/api';
+  // Use the same host as frontend but with backend port
+  return `http://${currentHost}:${apiPort}/api`;
 }
 
 const API_BASE_URL = getApiBaseUrl();

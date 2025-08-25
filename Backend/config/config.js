@@ -1,7 +1,24 @@
 import dotenv from 'dotenv';
 
+// Get network IP
+const getNetworkIP = () => {
+  const os = require('os');
+  const networkInterfaces = os.networkInterfaces();
+  
+  for (const interfaceName of Object.keys(networkInterfaces)) {
+    for (const interface of networkInterfaces[interfaceName]) {
+      if (interface.family === 'IPv4' && !interface.internal) {
+        return interface.address;
+      }
+    }
+  }
+  return 'localhost';
+};
+
 // Load environment variables
 dotenv.config();
+
+const networkIP = getNetworkIP();
 
 export const config = {
   // Database Configuration
@@ -25,7 +42,14 @@ export const config = {
   // Additional allowed origins for CORS
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? 
     process.env.ALLOWED_ORIGINS.split(',') : 
-    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    [
+      'http://localhost:3000', 
+      'http://127.0.0.1:3000', 
+      'http://localhost:5173', 
+      'http://127.0.0.1:5173',
+      `http://${networkIP}:3000`,
+      `http://${networkIP}:5173`
+    ],
 
   // Database URL (for SQLite)
   DATABASE_URL: process.env.DATABASE_URL || 'local',
