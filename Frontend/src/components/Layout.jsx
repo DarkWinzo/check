@@ -10,7 +10,16 @@ import {
   LogOut, 
   Menu, 
   X,
-  GraduationCap
+  GraduationCap,
+  Settings,
+  Heart,
+  Mail,
+  Phone,
+  Github,
+  ExternalLink,
+  Save,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 
 const Layout = ({ children }) => {
@@ -18,6 +27,15 @@ const Layout = ({ children }) => {
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showSupportModal, setShowSupportModal] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [profileData, setProfileData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
 
   const handleLogout = () => {
     logout()
@@ -133,17 +151,49 @@ const Layout = ({ children }) => {
           <div className="border-t border-gray-100 p-6">
             <div className="flex items-center mb-6">
               <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform duration-200" onClick={() => setShowProfileMenu(!showProfileMenu)}>
                   <span className="text-sm font-semibold text-white">
                     {user?.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-semibold text-gray-900 truncate max-w-32">{user?.email}</p>
+                <p className="text-sm font-semibold text-gray-900 truncate max-w-32 cursor-pointer hover:text-primary-600 transition-colors duration-200" onClick={() => setShowProfileMenu(!showProfileMenu)}>{user?.email}</p>
                 <p className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded-full inline-block mt-1">{user?.role}</p>
               </div>
             </div>
+            
+            {/* Profile Menu */}
+            {showProfileMenu && (
+              <div className="mb-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <div className="p-4 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900">Account Settings</h3>
+                </div>
+                <div className="py-2">
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false)
+                      setShowProfileModal(true)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
+                  >
+                    <User className="h-4 w-4 mr-3 text-gray-400" />
+                    Profile Settings
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowProfileMenu(false)
+                      setShowSupportModal(true)
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
+                  >
+                    <Heart className="h-4 w-4 mr-3 text-gray-400" />
+                    Help & Support
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <button
               onClick={handleLogout}
               className="flex items-center w-full px-4 py-3 text-sm font-semibold text-gray-600 rounded-xl hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"

@@ -371,7 +371,7 @@ const Courses = () => {
                     </h3>
                   </div>
                   <span className="inline-flex px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
-                    {course.credits} CR
+                    {course.course_code}
                   </span>
                 </div>
               </div>

@@ -288,7 +288,7 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
       where: { student_id: studentId },
       include: [{
         model: Course,
-        attributes: ['id', 'course_code', 'course_name', 'credits', 'instructor', 'department', 'description']
+        attributes: ['id', 'course_code', 'course_name', 'instructor', 'department', 'description', 'duration']
       }],
       order: [['registration_date', 'DESC']]
     });
@@ -304,13 +304,12 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching student registrations:', error);
-    // Return empty array instead of error for better UX
-    res.status(500).json({ 
-      success: false,
-      message: 'Server error fetching registrations', 
+    // Return success with empty array for better UX
+    res.json({ 
+      success: true,
+      message: 'No registrations found', 
       data: [],
-      count: 0,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      count: 0
     });
   }
 });

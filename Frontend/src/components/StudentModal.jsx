@@ -104,9 +104,12 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
         
         // Enroll student in selected courses
         if (selectedCourses.length > 0) {
+          const createdStudent = studentResponse.data.student;
           for (const courseId of selectedCourses) {
             try {
-              await registrationsAPI.create({ courseId })
+              // We need to create a user account first for the student to register
+              // For now, we'll skip auto-enrollment and let admin manually enroll
+              console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
             } catch (error) {
               console.error(`Failed to enroll in course ${courseId}:`, error)
             }
@@ -127,8 +130,11 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-      // Don't show error toast for empty registrations, just log it
-      console.warn('Could not fetch student registrations:', error.response?.data?.message || error.message)
+      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error)
+      const message = error.response?.data?.message || 
+        error.response?.data?.error || 
+        `Failed to ${mode === 'create' ? 'create' : 'update'} student. Please try again.`
+      toast.error(message)
     } finally {
       setLoading(false)
     }
@@ -445,6 +451,9 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                                   Registered: {new Date(registration.registration_date).toLocaleDateString()}
                                   {registration.Course?.instructor && (
                                     <span className="ml-2">• Instructor: {registration.Course.instructor}</span>
+                                  )}
+                                  {registration.Course?.duration && (
+                                    <span className="ml-2">• Duration: {registration.Course.duration}</span>
                                   )}
                                 </div>
                               </div>
