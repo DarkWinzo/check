@@ -104,7 +104,7 @@ const Layout = ({ children }) => {
               </div>
               <div>
                 <span className="text-lg font-bold gradient-text">EduFlow</span>
-                <p className="text-xs text-gray-500">Student Portal</p>
+                <p className="text-xs text-gray-500">Management System</p>
               </div>
             </div>
           </div>
@@ -170,7 +170,8 @@ const Layout = ({ children }) => {
               <div className="p-1.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700">
                 <GraduationCap className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold gradient-text">EduFlow</span>
+              <span className="text-lg font-bold gradient-text">Student Portal</span>
+              <span className="text-xs text-gray-500 ml-2">v2.0</span>
             </div>
           </div>
         </div>

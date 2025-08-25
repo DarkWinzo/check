@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import { 
-  Users, 
-  BookOpen, 
+  Users,
+  BookOpen,
   TrendingUp,
   Activity,
   ArrowUpRight,
@@ -26,7 +26,65 @@ import {
   Star,
   UserCheck,
   BookMarked,
-  TrendingDown
+  TrendingDown,
+  Settings,
+  User,
+  HelpCircle,
+  Shield,
+  Bell,
+  Globe,
+  Database,
+  Lock,
+  Palette,
+  Moon,
+  Sun,
+  Monitor,
+  Mail,
+  Phone,
+  MapPin,
+  Edit3,
+  Save,
+  X,
+  Camera,
+  Upload,
+  Download,
+  FileText,
+  Printer,
+  Share2,
+  Copy,
+  ExternalLink,
+  Zap,
+  Heart,
+  Coffee,
+  Headphones,
+  MessageCircle,
+  Video,
+  Mic,
+  Volume2,
+  Wifi,
+  Bluetooth,
+  Battery,
+  Smartphone,
+  Laptop,
+  Tablet,
+  Watch,
+  Home,
+  Building,
+  Car,
+  Plane,
+  Train,
+  Ship,
+  Rocket,
+  Gamepad2,
+  Music,
+  Image,
+  Film,
+  Camera as CameraIcon,
+  Mic2,
+  Radio,
+  Tv,
+  Speaker,
+  Headphones as HeadphonesIcon
 } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -34,6 +92,20 @@ import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showHelpModal, setShowHelpModal] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
+  const [notifications, setNotifications] = useState(true)
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    email: user?.email || '',
+    phone: '',
+    address: '',
+    bio: '',
+    avatar: null
+  })
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCourses: 0,
@@ -63,6 +135,15 @@ const Dashboard = () => {
   const [selectedChart, setSelectedChart] = useState('enrollment')
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
   const [analyticsType, setAnalyticsType] = useState('')
+
+  // Stable chart data to prevent constant refreshing
+  const [stableChartData, setStableChartData] = useState({
+    enrollmentByMonth: [],
+    coursePopularity: [],
+    statusDistribution: [],
+    enrollmentTrend: [],
+    departmentStats: []
+  })
 
   useEffect(() => {
     fetchDashboardData()
@@ -125,7 +206,8 @@ const Dashboard = () => {
 
         // Prepare chart data with error handling
         if (studentsRes.data.students && coursesRes.data.courses && registrationsRes.data.registrations) {
-          prepareChartData(studentsRes.data.students, coursesRes.data.courses, registrationsRes.data.registrations)
+          const newChartData = prepareChartData(studentsRes.data.students, coursesRes.data.courses, registrationsRes.data.registrations)
+          setStableChartData(newChartData)
         }
       } else {
         // For students, show limited stats
@@ -195,8 +277,8 @@ const Dashboard = () => {
           reg.registration_date && reg.registration_date.startsWith(monthYear)
         ).length
         
-        // Add some mock data if no real data exists for better visualization
-        const mockEnrollments = enrollments || Math.floor(Math.random() * 20) + 5
+        // Use consistent mock data instead of random
+        const mockEnrollments = enrollments || (15 + month * 2)
         
         monthlyData.push({
           month: monthName,
@@ -227,7 +309,10 @@ const Dashboard = () => {
       const statusCounts = students.reduce((acc, student) => {
         const status = student.status || 'unknown'
         acc[status] = (acc[status] || 0) + 1
-      // Add mock data if no courses exist
+        return acc
+      }, {})
+      
+      // Add consistent mock data if no courses exist
       if (coursePopularity.length === 0) {
         const mockCourses = [
           { name: 'Computer Science 101', students: 45, percentage: 25 },
@@ -238,9 +323,8 @@ const Dashboard = () => {
         ]
         coursePopularity.push(...mockCourses)
       }
-        return acc
-      }, {})
-      // Add mock data if no students exist
+      
+      // Add consistent mock data if no students exist
       if (Object.keys(statusCounts).length === 0) {
         statusCounts.active = 85
         statusCounts.inactive = 12
@@ -264,16 +348,23 @@ const Dashboard = () => {
         return acc
       }, {})
 
-      setChartData({
+      return {
         enrollmentByMonth: monthlyData,
         coursePopularity,
         statusDistribution,
         enrollmentTrend: monthlyData,
         departmentStats: Object.values(departmentStats)
-      })
+      }
     } catch (error) {
       console.error('Error preparing chart data:', error)
       toast.error('Failed to prepare analytics data')
+      return {
+        enrollmentByMonth: [],
+        coursePopularity: [],
+        statusDistribution: [],
+        enrollmentTrend: [],
+        departmentStats: []
+      }
     }
   }
 
@@ -292,46 +383,485 @@ const Dashboard = () => {
     setShowAnalyticsModal(true)
   }
 
+  const ProfileModal = () => {
+    if (!showProfileModal) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowProfileModal(false)}
+          />
+          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                  <User className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Profile Settings</h3>
+                  <p className="text-gray-600">Manage your personal information</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-8 space-y-8">
+              {/* Avatar Section */}
+              <div className="flex items-center space-x-6">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-xl">
+                    <span className="text-2xl font-bold text-white">
+                      {user?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <button className="absolute -bottom-2 -right-2 p-2 bg-white rounded-xl shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                    <Camera className="h-4 w-4 text-gray-600" />
+                  </button>
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900">{user?.email}</h4>
+                  <p className="text-gray-600 capitalize">{user?.role}</p>
+                  <button className="mt-2 text-sm text-blue-600 hover:text-blue-700 font-medium">
+                    Change Avatar
+                  </button>
+                </div>
+              </div>
+
+              {/* Form Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                  <input
+                    type="text"
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData({...profileData, firstName: e.target.value})}
+                    className="input w-full"
+                    placeholder="Enter first name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                  <input
+                    type="text"
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData({...profileData, lastName: e.target.value})}
+                    className="input w-full"
+                    placeholder="Enter last name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={profileData.email}
+                    disabled
+                    className="input w-full bg-gray-50 cursor-not-allowed"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                  <input
+                    type="tel"
+                    value={profileData.phone}
+                    onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                    className="input w-full"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                <textarea
+                  value={profileData.address}
+                  onChange={(e) => setProfileData({...profileData, address: e.target.value})}
+                  className="input w-full resize-none"
+                  rows={3}
+                  placeholder="Enter your address"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
+                <textarea
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({...profileData, bio: e.target.value})}
+                  className="input w-full resize-none"
+                  rows={4}
+                  placeholder="Tell us about yourself..."
+                />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end space-x-4 p-8 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="btn btn-outline"
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary flex items-center space-x-2">
+                <Save className="h-4 w-4" />
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const SettingsModal = () => {
+    if (!showSettingsModal) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowSettingsModal(false)}
+          />
+          <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl shadow-lg">
+                  <Settings className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Account Settings</h3>
+                  <p className="text-gray-600">Manage your account preferences and security</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* General Settings */}
+                <div className="space-y-6">
+                  <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                    <Globe className="h-5 w-5 mr-2 text-blue-600" />
+                    General
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <Moon className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">Dark Mode</div>
+                          <div className="text-sm text-gray-500">Toggle dark theme</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setDarkMode(!darkMode)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          darkMode ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            darkMode ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <Bell className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">Notifications</div>
+                          <div className="text-sm text-gray-500">Email notifications</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setNotifications(!notifications)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          notifications ? 'bg-green-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            notifications ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Settings */}
+                <div className="space-y-6">
+                  <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                    <Shield className="h-5 w-5 mr-2 text-green-600" />
+                    Security
+                  </h4>
+                  
+                  <div className="space-y-4">
+                    <button className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 text-left">
+                      <div className="flex items-center space-x-3">
+                        <Lock className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">Change Password</div>
+                          <div className="text-sm text-gray-500">Update your password</div>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 text-left">
+                      <div className="flex items-center space-x-3">
+                        <Smartphone className="h-5 w-5 text-gray-600" />
+                        <div>
+                          <div className="font-medium text-gray-900">Two-Factor Auth</div>
+                          <div className="text-sm text-gray-500">Enable 2FA security</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Admin Settings */}
+                {user?.role === 'admin' && (
+                  <div className="space-y-6">
+                    <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                      <Database className="h-5 w-5 mr-2 text-purple-600" />
+                      Administration
+                    </h4>
+                    
+                    <div className="space-y-4">
+                      <button className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 text-left">
+                        <div className="flex items-center space-x-3">
+                          <Users className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <div className="font-medium text-gray-900">User Management</div>
+                            <div className="text-sm text-gray-500">Manage user accounts</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 text-left">
+                        <div className="flex items-center space-x-3">
+                          <Database className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <div className="font-medium text-gray-900">System Backup</div>
+                            <div className="text-sm text-gray-500">Backup system data</div>
+                          </div>
+                        </div>
+                      </button>
+
+                      <button className="w-full p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200 text-left">
+                        <div className="flex items-center space-x-3">
+                          <BarChart3 className="h-5 w-5 text-gray-600" />
+                          <div>
+                            <div className="font-medium text-gray-900">Analytics Export</div>
+                            <div className="text-sm text-gray-500">Export system reports</div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end space-x-4 p-8 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="btn btn-outline"
+              >
+                Close
+              </button>
+              <button className="btn btn-primary flex items-center space-x-2">
+                <Save className="h-4 w-4" />
+                <span>Save Settings</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const HelpModal = () => {
+    if (!showHelpModal) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowHelpModal(false)}
+          />
+          <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl shadow-lg">
+                  <HelpCircle className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Help & Support</h3>
+                  <p className="text-gray-600">Get assistance and find answers</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Contact Support */}
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-blue-500 rounded-xl">
+                      <Headphones className="h-6 w-6 text-white" />
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900">Contact Support</h4>
+                  </div>
+                  <p className="text-gray-600 mb-4">Get direct help from our support team</p>
+                  <div className="space-y-3">
+                    <a href="mailto:taskflowt@gmail.com" className="flex items-center space-x-2 text-blue-600 hover:text-blue-700">
+                      <Mail className="h-4 w-4" />
+                      <span>taskflowt@gmail.com</span>
+                    </a>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <Phone className="h-4 w-4" />
+                      <span>+1 (555) 123-4567</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-gray-600">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Live Chat Available</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Documentation */}
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-purple-500 rounded-xl">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900">Documentation</h4>
+                  </div>
+                  <p className="text-gray-600 mb-4">Browse our comprehensive guides</p>
+                  <div className="space-y-2">
+                    <button className="w-full text-left p-2 hover:bg-purple-200 rounded-lg transition-colors duration-200">
+                      Getting Started Guide
+                    </button>
+                    <button className="w-full text-left p-2 hover:bg-purple-200 rounded-lg transition-colors duration-200">
+                      User Manual
+                    </button>
+                    <button className="w-full text-left p-2 hover:bg-purple-200 rounded-lg transition-colors duration-200">
+                      FAQ
+                    </button>
+                  </div>
+                </div>
+
+                {/* Video Tutorials */}
+                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 bg-green-500 rounded-xl">
+                      <Video className="h-6 w-6 text-white" />
+                    </div>
+                    <h4 className="text-lg font-bold text-gray-900">Video Tutorials</h4>
+                  </div>
+                  <p className="text-gray-600 mb-4">Watch step-by-step tutorials</p>
+                  <div className="space-y-2">
+                    <button className="w-full text-left p-2 hover:bg-green-200 rounded-lg transition-colors duration-200">
+                      System Overview
+                    </button>
+                    <button className="w-full text-left p-2 hover:bg-green-200 rounded-lg transition-colors duration-200">
+                      Managing Students
+                    </button>
+                    <button className="w-full text-left p-2 hover:bg-green-200 rounded-lg transition-colors duration-200">
+                      Course Management
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button className="flex items-center justify-center space-x-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+                  <Download className="h-5 w-5 text-gray-600" />
+                  <span className="font-medium text-gray-900">Download User Guide</span>
+                </button>
+                <button className="flex items-center justify-center space-x-3 p-4 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors duration-200">
+                  <ExternalLink className="h-5 w-5 text-gray-600" />
+                  <span className="font-medium text-gray-900">Visit Knowledge Base</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, bgGradient, onClick, subtitle }) => (
     <div 
-      className={`relative overflow-hidden rounded-2xl ${bgGradient} p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
+      className={`relative overflow-hidden rounded-3xl ${bgGradient} p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 group transform hover:-translate-y-2 hover:scale-105 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
-        <div className="absolute inset-0 bg-white rounded-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
+      <div className="absolute top-0 right-0 w-40 h-40 opacity-20">
+        <div className="absolute inset-0 bg-white rounded-full transform translate-x-10 -translate-y-10 group-hover:scale-125 transition-transform duration-700"></div>
       </div>
       
       <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`p-3 rounded-xl ${color} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className="h-6 w-6 text-white" />
+        <div className="flex items-center justify-between mb-6">
+          <div className={`p-4 rounded-2xl ${color} shadow-2xl group-hover:scale-125 group-hover:rotate-12 transition-all duration-500`}>
+            <Icon className="h-8 w-8 text-white" />
           </div>
           {trend && (
-            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold ${
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm font-bold shadow-lg ${
               trend === 'up' ? 'bg-green-100 text-green-800' : trend === 'down' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
             }`}>
-              {trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : trend === 'down' ? <ArrowDownRight className="h-3 w-3" /> : <Activity className="h-3 w-3" />}
+              {trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : trend === 'down' ? <ArrowDownRight className="h-4 w-4" /> : <Activity className="h-4 w-4" />}
               <span>{trendValue}%</span>
             </div>
           )}
         </div>
         
-        <div className="text-3xl font-bold text-white mb-2 group-hover:scale-105 transition-transform duration-300">
+        <div className="text-4xl font-black text-white mb-3 group-hover:scale-110 transition-transform duration-500">
           {loading ? <LoadingSpinner size="sm" /> : value}
         </div>
-        <div className="text-white/80 text-sm font-medium">{title}</div>
+        <div className="text-white/90 text-lg font-bold">{title}</div>
         {subtitle && (
-          <div className="text-white/60 text-xs mt-1">{subtitle}</div>
+          <div className="text-white/70 text-sm mt-2 font-medium">{subtitle}</div>
         )}
       </div>
       
-      <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20">
-        <div className="h-full bg-white/40 rounded-full transition-all duration-1000" style={{ width: `${Math.min((value / 100) * 100, 100)}%` }}></div>
+      <div className="absolute bottom-0 left-0 w-full h-2 bg-white/20 rounded-b-3xl">
+        <div className="h-full bg-gradient-to-r from-white/60 to-white/40 rounded-full transition-all duration-1000 animate-pulse" style={{ width: `${Math.min((value / 100) * 100, 100)}%` }}></div>
       </div>
       
       {onClick && (
-        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <ChevronRight className="h-5 w-5 text-white/80" />
+        <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-x-1">
+          <ChevronRight className="h-6 w-6 text-white/90" />
         </div>
       )}
     </div>
@@ -351,7 +881,7 @@ const Dashboard = () => {
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-gray-900 mb-4">Monthly Enrollment Trend</h4>
                   <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={chartData.enrollmentByMonth}>
+                    <AreaChart data={stableChartData.enrollmentByMonth}>
                       <defs>
                         <linearGradient id="colorEnrollments" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
@@ -394,7 +924,7 @@ const Dashboard = () => {
                   <ResponsiveContainer width="100%" height={300}>
                     <RechartsPieChart>
                       <Pie
-                        data={chartData.statusDistribution}
+                        data={stableChartData.statusDistribution}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -403,7 +933,7 @@ const Dashboard = () => {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {chartData.statusDistribution.map((entry, index) => (
+                        {stableChartData.statusDistribution.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]} />
                         ))}
                       </Pie>
@@ -412,7 +942,7 @@ const Dashboard = () => {
                   </ResponsiveContainer>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  {chartData.statusDistribution.map((status, index) => (
+                  {stableChartData.statusDistribution.map((status, index) => (
                     <div key={status.name} className="bg-white rounded-xl p-4 border border-gray-200">
                       <div className="flex items-center space-x-3">
                         <div 
@@ -439,7 +969,7 @@ const Dashboard = () => {
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6">
                   <h4 className="text-lg font-bold text-gray-900 mb-4">Course Popularity Ranking</h4>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={chartData.coursePopularity} layout="horizontal">
+                    <BarChart data={stableChartData.coursePopularity} layout="horizontal">
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" />
                       <YAxis dataKey="name" type="category" width={120} />
@@ -449,7 +979,7 @@ const Dashboard = () => {
                   </ResponsiveContainer>
                 </div>
                 <div className="space-y-3">
-                  {chartData.coursePopularity.map((course, index) => (
+                  {stableChartData.coursePopularity.map((course, index) => (
                     <div key={course.name} className="bg-white rounded-xl p-4 border border-gray-200 flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
@@ -510,13 +1040,16 @@ const Dashboard = () => {
 
   if (loading && Object.values(stats).every(val => val === 0)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
         <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center animate-pulse">
-            <Activity className="h-8 w-8 text-white" />
+          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 rounded-3xl flex items-center justify-center animate-pulse shadow-2xl">
+            <Sparkles className="h-12 w-12 text-white animate-spin" />
           </div>
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600 font-medium">Loading your dashboard...</p>
+          <div className="mb-4">
+            <LoadingSpinner size="xl" />
+          </div>
+          <p className="mt-4 text-white/80 font-bold text-xl">Loading your dashboard...</p>
+          <p className="mt-2 text-white/60 text-sm">Preparing your personalized experience</p>
         </div>
       </div>
     )
@@ -524,20 +1057,20 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-100">
-        <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-red-200">
-          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
-            <AlertCircle className="h-8 w-8 text-red-600" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-900 via-pink-900 to-purple-900">
+        <div className="text-center p-10 bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20">
+          <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-red-500 to-pink-600 rounded-2xl flex items-center justify-center shadow-xl">
+            <AlertCircle className="h-10 w-10 text-white" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard Error</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h3 className="text-2xl font-bold text-white mb-4">Dashboard Error</h3>
+          <p className="text-white/80 mb-6 max-w-md">{error}</p>
           <button 
             onClick={handleRefresh}
-            className="btn btn-primary flex items-center space-x-2 mx-auto"
+            className="btn btn-primary flex items-center space-x-3 mx-auto shadow-xl"
             disabled={refreshing}
           >
-            {refreshing ? <LoadingSpinner size="sm" /> : <RefreshCw className="h-4 w-4" />}
-            <span>Retry</span>
+            {refreshing ? <LoadingSpinner size="sm" /> : <RefreshCw className="h-5 w-5" />}
+            <span className="font-bold">Retry</span>
           </button>
         </div>
       </div>
@@ -545,34 +1078,34 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 animate-fade-in">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 animate-fade-in">
       {/* Header Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl mb-8 shadow-2xl">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 opacity-10">
-          <div className="absolute inset-0 bg-white rounded-full transform translate-x-32 -translate-y-32 animate-float"></div>
+      <div className="relative overflow-hidden bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-3xl mb-10 shadow-3xl">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-black/20"></div>
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full transform translate-x-40 -translate-y-40 animate-float blur-3xl"></div>
         </div>
-        <div className="absolute bottom-0 left-0 w-64 h-64 opacity-10">
-          <div className="absolute inset-0 bg-white rounded-full transform -translate-x-16 translate-y-16 animate-float" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-0 left-0 w-80 h-80 opacity-20">
+          <div className="absolute inset-0 bg-gradient-to-tr from-pink-400 to-purple-500 rounded-full transform -translate-x-20 translate-y-20 animate-float blur-3xl" style={{ animationDelay: '2s' }}></div>
         </div>
         
-        <div className="relative z-10 p-8 text-white">
+        <div className="relative z-10 p-10 text-white">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-            <div className="mb-6 lg:mb-0">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <Sparkles className="h-8 w-8 text-white" />
+            <div className="mb-8 lg:mb-0">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="p-3 bg-white/20 backdrop-blur-xl rounded-2xl shadow-2xl">
+                  <Sparkles className="h-10 w-10 text-white animate-pulse" />
                 </div>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold">
+                  <h1 className="text-4xl lg:text-5xl font-black bg-gradient-to-r from-white via-cyan-200 to-white bg-clip-text text-transparent">
                     Welcome back, {user?.email?.split('@')[0]}! 👋
                   </h1>
-                  <p className="text-white/80 text-lg mt-1">
+                  <p className="text-white/90 text-xl mt-2 font-bold">
                     {user?.role === 'admin' ? 'System Administrator' : 'Student Portal'}
                   </p>
                 </div>
               </div>
-              <p className="text-white/90 text-lg max-w-2xl leading-relaxed">
+              <p className="text-white/80 text-xl max-w-3xl leading-relaxed font-medium">
                 {user?.role === 'admin' 
                   ? 'Monitor your institution\'s performance with advanced analytics and insights.'
                   : 'Explore courses, track your progress, and manage your academic journey.'
@@ -580,20 +1113,46 @@ const Dashboard = () => {
               </p>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
+              {/* User Menu */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => setShowProfileModal(true)}
+                  className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105"
+                  title="Profile Settings"
+                >
+                  <User className="h-6 w-6 text-white" />
+                </button>
+                <button
+                  onClick={() => setShowSettingsModal(true)}
+                  className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105"
+                  title="Account Settings"
+                >
+                  <Settings className="h-6 w-6 text-white" />
+                </button>
+                <button
+                  onClick={() => setShowHelpModal(true)}
+                  className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105"
+                  title="Help & Support"
+                >
+                  <HelpCircle className="h-6 w-6 text-white" />
+                </button>
+              </div>
+              
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 border border-white/30 hover:bg-white/30 transition-all duration-200"
+                className="bg-white/20 backdrop-blur-xl rounded-2xl p-4 border border-white/30 hover:bg-white/30 transition-all duration-300 transform hover:scale-105"
                 title="Refresh Dashboard"
               >
-                <RefreshCw className={`h-5 w-5 text-white ${refreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-6 w-6 text-white ${refreshing ? 'animate-spin' : ''}`} />
               </button>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
-                <div className="text-2xl font-bold mb-1">
+              
+              <div className="bg-white/20 backdrop-blur-xl rounded-2xl p-6 border border-white/30 shadow-2xl">
+                <div className="text-3xl font-black mb-2">
                   {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
-                <div className="text-white/80 text-sm">
+                <div className="text-white/90 text-sm font-bold">
                   {currentTime.toLocaleDateString([], { 
                     weekday: 'long',
                     month: 'short',
@@ -607,47 +1166,47 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
         {user?.role === 'admin' ? (
           <>
             <StatCard
               title="Total Students"
               value={stats.totalStudents}
-              icon={Users}
+              icon={GraduationCap}
               trend="up"
               trendValue="12"
-              color="bg-gradient-to-r from-blue-500 to-blue-600"
-              bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+              color="bg-gradient-to-r from-cyan-500 to-blue-600"
+              bgGradient="bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600"
               subtitle={`${stats.activeStudents} active`}
             />
             <StatCard
               title="Total Courses"
               value={stats.totalCourses}
-              icon={BookOpen}
+              icon={Rocket}
               trend="up"
               trendValue="8"
-              color="bg-gradient-to-r from-green-500 to-green-600"
-              bgGradient="bg-gradient-to-br from-green-500 to-green-600"
+              color="bg-gradient-to-r from-emerald-500 to-green-600"
+              bgGradient="bg-gradient-to-br from-emerald-500 via-green-500 to-green-600"
               subtitle="Available for enrollment"
             />
             <StatCard
               title="Students per Course"
               value={stats.studentsPerCourse}
-              icon={TrendingUp}
+              icon={Zap}
               trend="up"
               trendValue="5"
-              color="bg-gradient-to-r from-purple-500 to-purple-600"
-              bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
+              color="bg-gradient-to-r from-purple-500 to-pink-600"
+              bgGradient="bg-gradient-to-br from-purple-500 via-pink-500 to-pink-600"
               subtitle="Average enrollment"
             />
             <StatCard
               title="Total Registrations"
               value={stats.totalRegistrations}
-              icon={Activity}
+              icon={Heart}
               trend="up"
               trendValue="15"
-              color="bg-gradient-to-r from-orange-500 to-orange-600"
-              bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
+              color="bg-gradient-to-r from-orange-500 to-red-600"
+              bgGradient="bg-gradient-to-br from-orange-500 via-red-500 to-red-600"
               subtitle={`${stats.completedCourses} completed`}
             />
           </>
@@ -656,30 +1215,30 @@ const Dashboard = () => {
             <StatCard
               title="Available Courses"
               value={stats.totalCourses}
-              icon={BookOpen}
-              color="bg-gradient-to-r from-blue-500 to-blue-600"
-              bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+              icon={Rocket}
+              color="bg-gradient-to-r from-cyan-500 to-blue-600"
+              bgGradient="bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600"
             />
             <StatCard
               title="My Registrations"
               value={stats.myRegistrations || 0}
-              icon={Users}
-              color="bg-gradient-to-r from-green-500 to-green-600"
-              bgGradient="bg-gradient-to-br from-green-500 to-green-600"
+              icon={Heart}
+              color="bg-gradient-to-r from-emerald-500 to-green-600"
+              bgGradient="bg-gradient-to-br from-emerald-500 via-green-500 to-green-600"
             />
             <StatCard
               title="Completed Courses"
               value={stats.completedCourses || 0}
-              icon={Award}
-              color="bg-gradient-to-r from-purple-500 to-purple-600"
-              bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
+              icon={Star}
+              color="bg-gradient-to-r from-purple-500 to-pink-600"
+              bgGradient="bg-gradient-to-br from-purple-500 via-pink-500 to-pink-600"
             />
             <StatCard
               title="Current Semester"
               value="Fall 2025"
-              icon={Calendar}
-              color="bg-gradient-to-r from-orange-500 to-orange-600"
-              bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
+              icon={Coffee}
+              color="bg-gradient-to-r from-orange-500 to-red-600"
+              bgGradient="bg-gradient-to-br from-orange-500 via-red-500 to-red-600"
             />
           </>
         )}
@@ -687,66 +1246,66 @@ const Dashboard = () => {
 
       {/* Analytics Cards for Admin */}
       {user?.role === 'admin' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <div 
-            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-gradient-to-br from-cyan-500 via-blue-500 to-blue-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group transform hover:-translate-y-3 hover:scale-105"
             onClick={() => openAnalyticsModal('enrollment')}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <TrendingUp className="h-6 w-6" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-white/20 backdrop-blur-xl rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
+                <TrendingUp className="h-8 w-8" />
               </div>
-              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <ChevronRight className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-x-2" />
             </div>
-            <h3 className="text-lg font-bold mb-2">Enrollment Trend</h3>
-            <p className="text-white/80 text-sm">View detailed enrollment analytics and trends over time</p>
+            <h3 className="text-2xl font-black mb-3">Enrollment Trend</h3>
+            <p className="text-white/90 text-base font-medium">View detailed enrollment analytics and trends over time</p>
           </div>
 
           <div 
-            className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-gradient-to-br from-emerald-500 via-green-500 to-green-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group transform hover:-translate-y-3 hover:scale-105"
             onClick={() => openAnalyticsModal('status')}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <PieChart className="h-6 w-6" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-white/20 backdrop-blur-xl rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
+                <PieChart className="h-8 w-8" />
               </div>
-              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <ChevronRight className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-x-2" />
             </div>
-            <h3 className="text-lg font-bold mb-2">Student Status</h3>
-            <p className="text-white/80 text-sm">Analyze student status distribution and engagement</p>
+            <h3 className="text-2xl font-black mb-3">Student Status</h3>
+            <p className="text-white/90 text-base font-medium">Analyze student status distribution and engagement</p>
           </div>
 
           <div 
-            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            className="bg-gradient-to-br from-purple-500 via-pink-500 to-pink-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer group transform hover:-translate-y-3 hover:scale-105"
             onClick={() => openAnalyticsModal('courses')}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <BarChart3 className="h-6 w-6" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-4 bg-white/20 backdrop-blur-xl rounded-2xl shadow-xl group-hover:scale-110 group-hover:rotate-12 transition-all duration-500">
+                <BarChart3 className="h-8 w-8" />
               </div>
-              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <ChevronRight className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-all duration-500 transform group-hover:translate-x-2" />
             </div>
-            <h3 className="text-lg font-bold mb-2">Popular Courses</h3>
-            <p className="text-white/80 text-sm">Discover which courses are most in demand</p>
+            <h3 className="text-2xl font-black mb-3">Popular Courses</h3>
+            <p className="text-white/90 text-base font-medium">Discover which courses are most in demand</p>
           </div>
         </div>
       )}
 
       {/* Recent Students Section (Admin Only) */}
       {user?.role === 'admin' && (
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
-                <Users className="h-6 w-6 text-white" />
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-2xl shadow-xl">
+                <Users className="h-8 w-8 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Recent Students</h2>
+              <h2 className="text-3xl font-black text-gray-900">Recent Students</h2>
             </div>
-            <div className="text-sm text-gray-500">Latest registrations</div>
+            <div className="text-base text-gray-600 font-medium">Latest registrations</div>
           </div>
 
           {/* Search */}
-          <div className="mb-6">
+          <div className="mb-8">
             <div className="relative max-w-md">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
@@ -756,7 +1315,7 @@ const Dashboard = () => {
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="input pl-10 w-full"
+                className="input pl-10 w-full bg-white/50 backdrop-blur-sm border-white/30 focus:border-blue-300 focus:ring-blue-200"
               />
             </div>
           </div>
@@ -769,31 +1328,31 @@ const Dashboard = () => {
           ) : students.length > 0 ? (
             <div className="space-y-4">
               {students.map((student) => (
-                <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                <div key={student.id} className="flex items-center justify-between p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl hover:from-blue-50 hover:to-purple-50 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                   <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
-                      <span className="text-sm font-bold text-white">
+                    <div className="h-16 w-16 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center shadow-xl">
+                      <span className="text-lg font-black text-white">
                         {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
                       </span>
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-900">
+                      <div className="font-bold text-gray-900 text-lg">
                         {student.first_name} {student.last_name}
                       </div>
-                      <div className="text-sm text-gray-500">
+                      <div className="text-base text-gray-600 font-medium">
                         {student.email} • ID: {student.student_id}
                       </div>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                    <span className={`inline-flex px-4 py-2 text-sm font-bold rounded-full shadow-lg ${
                       student.status === 'active'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : 'bg-red-100 text-red-800'
+                        ? 'bg-gradient-to-r from-emerald-100 to-green-200 text-emerald-800'
+                        : 'bg-gradient-to-r from-red-100 to-pink-200 text-red-800'
                     }`}>
                       {student.status}
                     </span>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-sm text-gray-600 mt-2 font-medium">
                       {new Date(student.enrollment_date || student.created_at).toLocaleDateString()}
                     </div>
                   </div>
@@ -802,8 +1361,8 @@ const Dashboard = () => {
 
               {/* Pagination */}
               {pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div className="text-sm text-gray-700">
+                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
+                  <div className="text-base text-gray-700 font-medium">
                     Showing {((pagination.currentPage - 1) * 5) + 1} to{' '}
                     {Math.min(pagination.currentPage * 5, pagination.totalCount)} of{' '}
                     {pagination.totalCount} students
@@ -812,14 +1371,14 @@ const Dashboard = () => {
                     <button
                       onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                       disabled={!pagination.hasPrev}
-                      className="btn btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                       Previous
                     </button>
                     <button
                       onClick={() => setCurrentPage(prev => prev + 1)}
                       disabled={!pagination.hasNext}
-                      className="btn btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                     >
                       Next
                     </button>
@@ -829,13 +1388,13 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
-                <Users className="h-8 w-8 text-gray-400" />
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-r from-gray-200 to-gray-300 rounded-3xl flex items-center justify-center shadow-xl">
+                <Users className="h-10 w-10 text-gray-500" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 {searchTerm ? 'No students found' : 'No students yet'}
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-lg">
                 {searchTerm 
                   ? 'Try adjusting your search criteria.'
                   : 'Students will appear here once they are added to the system.'
@@ -848,16 +1407,16 @@ const Dashboard = () => {
 
       {/* Welcome Message for Students */}
       {user?.role === 'student' && (
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-12 text-center">
           <div className="flex items-center justify-center mb-6">
-            <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-              <GraduationCap className="h-8 w-8 text-white" />
+            <div className="p-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-600 rounded-2xl shadow-2xl">
+              <GraduationCap className="h-12 w-12 text-white" />
             </div>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+          <h2 className="text-4xl font-black text-gray-900 mb-6">
             Your Academic Journey
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-gray-700 max-w-3xl mx-auto leading-relaxed text-xl font-medium">
             Navigate through the menu to explore available courses, manage your registrations, and track your academic progress. Your learning journey starts here!
           </p>
         </div>
@@ -865,6 +1424,15 @@ const Dashboard = () => {
 
       {/* Analytics Modal */}
       <AnalyticsModal />
+      
+      {/* Profile Modal */}
+      <ProfileModal />
+      
+      {/* Settings Modal */}
+      <SettingsModal />
+      
+      {/* Help Modal */}
+      <HelpModal />
     </div>
   )
 }
