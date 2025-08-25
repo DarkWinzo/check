@@ -1,0 +1,429 @@
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '../contexts/AuthContext'
+import { coursesAPI, registrationsAPI } from '../services/api'
+import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+import LoadingSpinner from '../components/LoadingSpinner'
+import CourseModal from '../components/CourseModal'
+
+const Courses = () => {
+  const { user } = useAuth()
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [registering, setRegistering] = useState({})
+  const [deleteLoading, setDeleteLoading] = useState({})
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedDepartment, setSelectedDepartment] = useState('')
+  const [selectedSemester, setSelectedSemester] = useState('')
+  const [pagination, setPagination] = useState({})
+  const [showModal, setShowModal] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [modalMode, setModalMode] = useState('create') // 'create', 'edit', 'view'
+
+  useEffect(() => {
+    fetchCourses()
+  }, [searchTerm, selectedDepartment, selectedSemester])
+
+  const fetchCourses = async (page = 1) => {
+    try {
+      setLoading(true)
+      const params = {
+        page,
+        limit: 12,
+        search: searchTerm,
+        department: selectedDepartment,
+        semester: selectedSemester
+      }
+
+      const response = await coursesAPI.getAll(params)
+      setCourses(response.data.courses)
+      setPagination(response.data.pagination)
+    } catch (error) {
+      console.error('Error fetching courses:', error)
+      toast.error('Failed to fetch courses')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleRegister = async (courseId) => {
+    try {
+      setRegistering(prev => ({ ...prev, [courseId]: true }))
+      
+      await registrationsAPI.create({ courseId })
+      toast.success('Successfully registered for course!')
+      
+      // Refresh courses to update enrollment count
+      fetchCourses()
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to register for course'
+      toast.error(message)
+    } finally {
+      setRegistering(prev => ({ ...prev, [courseId]: false }))
+    }
+  }
+
+  const handleCreateCourse = () => {
+    setSelectedCourse(null)
+    setModalMode('create')
+    setShowModal(true)
+  }
+
+  const handleEditCourse = (course) => {
+    setSelectedCourse(course)
+    setModalMode('edit')
+    setShowModal(true)
+  }
+
+  const handleViewCourse = (course) => {
+    setSelectedCourse(course)
+    setModalMode('view')
+    setShowModal(true)
+  }
+
+  const handleDeleteCourse = async (course) => {
+    if (!window.confirm(`Are you sure you want to delete "${course.course_name}"? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeleteLoading(prev => ({ ...prev, [course.id]: true }))
+      await coursesAPI.delete(course.id)
+      toast.success('Course deleted successfully')
+      fetchCourses()
+    } catch (error) {
+      const message = error.response?.data?.message || 'Failed to delete course'
+      toast.error(message)
+    } finally {
+      setDeleteLoading(prev => ({ ...prev, [course.id]: false }))
+    }
+  }
+  const handleModalClose = () => {
+    setShowModal(false)
+    setSelectedCourse(null)
+  }
+
+  const handleModalSuccess = () => {
+    setShowModal(false)
+    setSelectedCourse(null)
+    fetchCourses()
+  }
+  const departments = [...new Set(courses.map(course => course.department).filter(Boolean))]
+  const semesters = [...new Set(courses.map(course => course.semester).filter(Boolean))]
+
+  if (loading && courses.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner size="xl" />
+          <p className="mt-4 text-gray-600">Loading courses...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg">
+              <GraduationCap className="h-6 w-6 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold gradient-text">Courses</h1>
+          </div>
+          <p className="text-gray-600">
+            {user?.role === 'admin' ? 'Manage course offerings and view enrollments' : 'Browse and register for available courses'}
+          </p>
+        </div>
+        
+        {user?.role === 'admin' && (
+          <button 
+            onClick={handleCreateCourse}
+            className="btn btn-primary flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Course</span>
+          </button>
+        )}
+      </div>
+
+      {/* Filters */}
+      <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative lg:col-span-2">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search courses by name, code, or instructor..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input pl-10 bg-white/50 backdrop-blur-sm border-white/30 focus:border-green-300 focus:ring-green-200"
+              />
+            </div>
+            
+            <select
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="input bg-white/50 backdrop-blur-sm border-white/30 focus:border-green-300 focus:ring-green-200"
+            >
+              <option value="">All Departments</option>
+              {departments.map(dept => (
+                <option key={dept} value={dept}>{dept}</option>
+              ))}
+            </select>
+            
+            <div className="flex items-center justify-end">
+              {(searchTerm || selectedDepartment) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    setSelectedDepartment('')
+                  }}
+                  className="btn btn-outline text-sm px-4 py-2"
+                >
+                  <Filter className="h-4 w-4 mr-1" />
+                  Clear Filters
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {(searchTerm || selectedDepartment) && (
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+              <div className="text-sm text-gray-600">
+                {pagination.totalCount > 0 
+                  ? `Found ${pagination.totalCount} course${pagination.totalCount !== 1 ? 's' : ''}`
+                  : 'No courses found'
+                } with current filters
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Courses Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center h-32">
+          <LoadingSpinner size="lg" />
+        </div>
+      ) : courses.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {courses.map((course) => (
+            <div key={course.id} className="glass-card rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden">
+              {/* Course Header */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 border-b border-green-200">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div className="flex items-center space-x-2 mb-2">
+                      <div className="p-1.5 bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-sm">
+                        <BookOpen className="h-4 w-4 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold text-green-700 bg-green-200 px-2 py-1 rounded-full">
+                        Course
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-200">
+                      {course.course_name}
+                    </h3>
+                  </div>
+                  <span className="inline-flex px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-sm">
+                    {course.credits} CR
+                  </span>
+                </div>
+              </div>
+
+              {/* Course Content */}
+              <div className="p-6">
+                {course.description && (
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+                    {course.description}
+                  </p>
+                )}
+
+                <div className="space-y-3 mb-6">
+                  {course.duration && (
+                    <div className="flex items-center text-sm text-gray-700">
+                      <div className="p-1 bg-orange-100 rounded-lg mr-3">
+                        <Clock className="h-3 w-3 text-orange-600" />
+                      </div>
+                      <span>{course.duration}</span>
+                    </div>
+                  )}
+                  
+                  {course.instructor && (
+                    <div className="flex items-center text-sm text-gray-700">
+                      <div className="p-1 bg-blue-100 rounded-lg mr-3">
+                        <User className="h-3 w-3 text-blue-600" />
+                      </div>
+                      <span className="font-medium">{course.instructor}</span>
+                    </div>
+                  )}
+                  
+                </div>
+
+                {/* Enrollment Status */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm text-gray-600">Enrollment</span>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-gray-900">
+                        {course.dataValues?.enrolled_count || course.enrolled_count || 0}/{course.max_students}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {Math.round(((course.dataValues?.enrolled_count || course.enrolled_count || 0) / course.max_students) * 100)}% full
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-300"
+                      style={{ 
+                        width: `${Math.min(((course.dataValues?.enrolled_count || course.enrolled_count || 0) / course.max_students) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-2">
+                  {user?.role === 'admin' ? (
+                    <>
+                      <button 
+                        onClick={() => handleViewCourse(course)}
+                        className="flex-1 btn btn-outline text-sm py-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleEditCourse(course)}
+                        className="btn btn-primary text-sm py-2 px-3"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteCourse(course)}
+                        disabled={deleteLoading[course.id]}
+                        className="btn btn-outline text-red-600 hover:bg-red-50 hover:border-red-300 text-sm py-2 px-3 disabled:opacity-50"
+                      >
+                        {deleteLoading[course.id] ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </button>
+                    </>
+                  ) : user?.role === 'student' && (
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewCourse(course)}
+                        className="flex-1 btn btn-outline text-sm py-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleRegister(course.id)}
+                        disabled={registering[course.id] || (course.dataValues?.enrolled_count || course.enrolled_count || 0) >= course.max_students}
+                        className="flex-1 btn btn-primary text-sm py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {registering[course.id] ? (
+                          <>
+                            <LoadingSpinner size="sm" className="mr-1" />
+                            Registering...
+                          </>
+                        ) : (course.dataValues?.enrolled_count || course.enrolled_count || 0) >= course.max_students ? (
+                          'Course Full'
+                        ) : (
+                          <>
+                            <Star className="h-4 w-4 mr-1" />
+                            Register
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-16">
+          <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-r from-gray-100 to-gray-200 rounded-2xl flex items-center justify-center">
+            <BookOpen className="h-12 w-12 text-gray-400" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            {searchTerm || selectedDepartment ? 'No courses found' : 'No courses available'}
+          </h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            {searchTerm || selectedDepartment
+              ? 'No courses match your current filters. Try adjusting your search criteria.'
+              : 'No courses have been added to the system yet.'
+            }
+          </p>
+          {user?.role === 'admin' && !(searchTerm || selectedDepartment) && (
+            <button 
+              onClick={handleCreateCourse}
+              className="btn btn-primary"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add First Course
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+          <div className="text-sm text-gray-700">
+            Showing <span className="font-semibold">{((pagination.currentPage - 1) * 12) + 1}</span> to{' '}
+            <span className="font-semibold">
+              {Math.min(pagination.currentPage * 12, pagination.totalCount)}
+            </span> of{' '}
+            <span className="font-semibold">{pagination.totalCount}</span> courses
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => fetchCourses(pagination.currentPage - 1)}
+              disabled={!pagination.hasPrev}
+              className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => fetchCourses(pagination.currentPage + 1)}
+              disabled={!pagination.hasNext}
+              className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Course Modal */}
+      {showModal && (
+        <CourseModal
+          isOpen={showModal}
+          onClose={handleModalClose}
+          onSuccess={handleModalSuccess}
+          course={selectedCourse}
+          mode={modalMode}
+        />
+      )}
+    </div>
+  )
+}
+
+export default Courses
