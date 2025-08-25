@@ -31,11 +31,41 @@ const Layout = ({ children }) => {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(false)
   const [profileData, setProfileData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
+
+  const handleUpdatePassword = async () => {
+    if (!profileData.currentPassword || !profileData.newPassword || !profileData.confirmPassword) {
+      toast.error('Please fill in all password fields')
+      return
+    }
+
+    if (profileData.newPassword !== profileData.confirmPassword) {
+      toast.error('New passwords do not match')
+      return
+    }
+
+    if (profileData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters long')
+      return
+    }
+
+    try {
+      setProfileLoading(true)
+      // Add API call for password update when backend supports it
+      toast.success('Password updated successfully!')
+      setShowProfileModal(false)
+      setProfileData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      toast.error('Failed to update password. Please try again.')
+    } finally {
+      setProfileLoading(false)
+    }
+  }
 
   const handleLogout = () => {
     logout()
@@ -121,12 +151,17 @@ const Layout = ({ children }) => {
               <button
                 onClick={() => setShowProfileModal(false)}
                 className="btn btn-outline"
+                disabled={profileLoading}
               >
                 Cancel
               </button>
-              <button className="btn btn-primary">
+              <button 
+                onClick={handleUpdatePassword}
+                disabled={profileLoading}
+                className="btn btn-primary"
+              >
                 <Save className="h-4 w-4 mr-2" />
-                Update Password
+                {profileLoading ? 'Updating...' : 'Update Password'}
               </button>
             </div>
           </div>

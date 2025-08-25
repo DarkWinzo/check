@@ -31,40 +31,53 @@ router.post('/', authenticateToken, requireRole(['admin']), [
       gender
     } = req.body;
 
-    // Check if student ID already exists
-    const existingStudent = await Student.findOne({
-      where: { student_id: studentId }
-    });
+    const transaction = await DATABASE.transaction();
 
-    if (existingStudent) {
-      return res.status(400).json({ message: 'Student ID already exists' });
+    try {
+      // Check if student ID already exists
+      const existingStudent = await Student.findOne({
+        where: { student_id: studentId },
+        transaction
+      });
+
+      if (existingStudent) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Student ID already exists' });
+      }
+
+      // Check if email already exists
+      const existingEmail = await Student.findOne({
+        where: { email },
+        transaction
+      });
+
+      if (existingEmail) {
+        await transaction.rollback();
+        return res.status(400).json({ message: 'Email already exists' });
+      }
+
+      const student = await Student.create({
+        student_id: studentId,
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        phone,
+        date_of_birth: dateOfBirth,
+        gender,
+        address,
+        status
+      }, { transaction });
+
+      await transaction.commit();
+      
+      res.status(201).json({
+        message: 'Student created successfully',
+        student
+      });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
     }
-
-    // Check if email already exists
-    const existingEmail = await Student.findOne({
-      where: { email }
-    });
-
-    if (existingEmail) {
-      return res.status(400).json({ message: 'Email already exists' });
-    }
-
-    const student = await Student.create({
-      student_id: studentId,
-      first_name: firstName,
-      last_name: lastName,
-      email,
-      phone,
-      date_of_birth: dateOfBirth,
-      gender,
-      address,
-      status
-    });
-
-    res.status(201).json({
-      message: 'Student created successfully',
-      student
-    });
 
   } catch (error) {
     console.error('Error creating student:', error);
@@ -143,29 +156,52 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
-    let whereClause = {}
-    
-    // Students can only view their own profile, admins can view any
-    if (req.user.role === 'student' || id === 'me') {
-      // For students, find their student record by user_id
+    // Handle 'me' route for current student
+    if (id === 'me' && req.user.role === 'student') {
       const student = await Student.findOne({
         where: { user_id: req.user.id },
         include: [{
           model: User,
           attributes: ['email', 'role']
         }]
-      })
+      });
 
       if (!student) {
-        return res.status(404).json({ message: 'Student profile not found' })
+        return res.status(404).json({ message: 'Student profile not found' });
       }
 
-      return res.json(student)
+      return res.json(student);
     }
 
-    // Handle numeric ID for admin access
-    whereClause = { id: parseInt(id) }
+    let whereClause = {}
     
+    // For numeric IDs (admin access)
+    if (!isNaN(id)) {
+      whereClause = { id: parseInt(id) };
+    } else {
+      return res.status(400).json({ message: 'Invalid student ID' });
+    }
+    
+    // Students can only view their own profile
+    if (req.user.role === 'student') {
+      const student = await Student.findOne({
+        where: { user_id: req.user.id },
+        include: [{
+          model: User,
+          attributes: ['email', 'role']
+        }]
+      });
+
+      if (!student) {
+        return res.status(404).json({ message: 'Student profile not found' });
+      }
+
+      // Check if student is trying to access their own record
+      if (parseInt(id) !== student.id) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+    }
+
     // For admins, get any student by ID
     const student = await Student.findOne({
       where: whereClause,
@@ -268,9 +304,10 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // For students, get their own registrations by user_id
-    let studentId = id;
-    if (req.user.role === 'student') {
+    let studentId;
+    
+    // Handle 'me' route for current student
+    if (id === 'me' && req.user.role === 'student') {
       const student = await Student.findOne({
         where: { user_id: req.user.id }
       });
@@ -279,12 +316,23 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
         return res.status(404).json({ message: 'Student profile not found' });
       }
       studentId = student.id;
+    } else if (req.user.role === 'student') {
+      // For students accessing by ID, verify it's their own record
+      const student = await Student.findOne({
+        where: { user_id: req.user.id }
+      });
+      
+      if (!student || student.id !== parseInt(id)) {
+        return res.status(403).json({ message: 'Access denied' });
+      }
+      studentId = student.id;
     } else {
       // For admins, verify the student exists
       const student = await Student.findByPk(id);
       if (!student) {
         return res.status(404).json({ message: 'Student not found' });
       }
+      studentId = id;
     }
 
     const registrations = await Registration.findAll({
@@ -314,6 +362,152 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
       data: [],
       count: 0
     });
+  }
+});
+
+// Enroll student in courses (admin only)
+router.post('/:id/enroll', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { courseIds } = req.body;
+
+    if (!Array.isArray(courseIds) || courseIds.length === 0) {
+      return res.status(400).json({ message: 'Course IDs array is required' });
+    }
+
+    const student = await Student.findByPk(id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const transaction = await DATABASE.transaction();
+    const results = [];
+    const errors = [];
+
+    try {
+      for (const courseId of courseIds) {
+        try {
+          // Check if course exists and is active
+          const course = await Course.findByPk(courseId, { transaction });
+          if (!course) {
+            errors.push(`Course with ID ${courseId} not found`);
+            continue;
+          }
+
+          if (course.status !== 'active') {
+            errors.push(`Course ${course.course_name} is not available for registration`);
+            continue;
+          }
+
+          // Check if already registered
+          const existingRegistration = await Registration.findOne({
+            where: { student_id: id, course_id: courseId },
+            transaction
+          });
+
+          if (existingRegistration) {
+            errors.push(`Already registered for ${course.course_name}`);
+            continue;
+          }
+
+          // Check course capacity
+          const enrollmentCount = await Registration.count({
+            where: { course_id: courseId, status: 'enrolled' },
+            transaction
+          });
+
+          if (enrollmentCount >= course.max_students) {
+            errors.push(`Course ${course.course_name} is full`);
+            continue;
+          }
+
+          // Create registration
+          const registration = await Registration.create({
+            student_id: id,
+            course_id: courseId,
+            status: 'enrolled'
+          }, { transaction });
+
+          results.push({
+            courseId,
+            courseName: course.course_name,
+            registrationId: registration.id
+          });
+        } catch (error) {
+          errors.push(`Error enrolling in course ${courseId}: ${error.message}`);
+        }
+      }
+
+      await transaction.commit();
+
+      res.json({
+        message: 'Enrollment process completed',
+        successful: results,
+        errors: errors,
+        successCount: results.length,
+        errorCount: errors.length
+      });
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error enrolling student in courses:', error);
+    res.status(500).json({ message: 'Server error during enrollment' });
+  }
+});
+
+// Unenroll student from courses (admin only)
+router.post('/:id/unenroll', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { registrationIds } = req.body;
+
+    if (!Array.isArray(registrationIds) || registrationIds.length === 0) {
+      return res.status(400).json({ message: 'Registration IDs array is required' });
+    }
+
+    const student = await Student.findByPk(id);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const registrationId of registrationIds) {
+      try {
+        const registration = await Registration.findOne({
+          where: { id: registrationId, student_id: id }
+        });
+
+        if (!registration) {
+          errors.push(`Registration ${registrationId} not found`);
+          continue;
+        }
+
+        await Registration.update(
+          { status: 'dropped' },
+          { where: { id: registrationId } }
+        );
+
+        results.push(registrationId);
+      } catch (error) {
+        errors.push(`Error dropping registration ${registrationId}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      message: 'Unenrollment process completed',
+      successful: results,
+      errors: errors,
+      successCount: results.length,
+      errorCount: errors.length
+    });
+
+  } catch (error) {
+    console.error('Error unenrolling student from courses:', error);
+    res.status(500).json({ message: 'Server error during unenrollment' });
   }
 });
 

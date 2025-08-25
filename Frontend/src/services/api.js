@@ -76,6 +76,8 @@ export const studentsAPI = {
   update: (id, data) => api.put(`/students/${id}`, data),
   delete: (id) => api.delete(`/students/${id}`),
   getRegistrations: (id) => api.get(`/students/${id}/registrations`),
+  enrollInCourses: (id, courseIds) => api.post(`/students/${id}/enroll`, { courseIds }),
+  unenrollFromCourses: (id, registrationIds) => api.post(`/students/${id}/unenroll`, { registrationIds }),
 }
 
 export const coursesAPI = {

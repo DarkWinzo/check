@@ -12,6 +12,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
   const [selectedCourses, setSelectedCourses] = useState([])
   const [studentRegistrations, setStudentRegistrations] = useState([])
   const [loadingRegistrations, setLoadingRegistrations] = useState(false)
+  const [showCourseSelection, setShowCourseSelection] = useState(false)
 
   const {
     register,
@@ -99,18 +100,18 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
         
         // Enroll student in selected courses
         if (selectedCourses.length > 0) {
-          const createdStudent = studentResponse.data.student;
-          for (const courseId of selectedCourses) {
-            try {
-              // Note: Auto-enrollment requires user account creation
-              console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
-            } catch (error) {
-              console.error(`Failed to enroll in course ${courseId}:`, error);
-            }
+          const createdStudent = studentResponse.data.student
+          try {
+            await studentsAPI.enrollInCourses(createdStudent.id, selectedCourses)
+            toast.success(`Student created and enrolled in ${selectedCourses.length} course${selectedCourses.length !== 1 ? 's' : ''}!`)
+          } catch (enrollError) {
+            console.error('Error enrolling in courses:', enrollError)
+            toast.success('Student created successfully!')
+            toast.error('Some courses could not be enrolled. Please check manually.')
           }
+        } else {
+          toast.success('Student created successfully!')
         }
-        
-        toast.success('Student created successfully!')
       } else {
         await studentsAPI.update(student.id, {
           firstName: data.firstName,
@@ -131,6 +132,39 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       toast.error(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleUnenrollFromCourse = async (registrationId) => {
+    if (!window.confirm('Are you sure you want to drop this course?')) {
+      return
+    }
+
+    try {
+      await studentsAPI.unenrollFromCourses(student.id, [registrationId])
+      toast.success('Course dropped successfully')
+      fetchStudentRegistrations()
+    } catch (error) {
+      console.error('Error dropping course:', error)
+      toast.error('Failed to drop course')
+    }
+  }
+
+  const handleAddCourses = async () => {
+    if (selectedCourses.length === 0) {
+      toast.error('Please select at least one course')
+      return
+    }
+
+    try {
+      await studentsAPI.enrollInCourses(student.id, selectedCourses)
+      toast.success(`Enrolled in ${selectedCourses.length} course${selectedCourses.length !== 1 ? 's' : ''}!`)
+      setSelectedCourses([])
+      setShowCourseSelection(false)
+      fetchStudentRegistrations()
+    } catch (error) {
+      console.error('Error enrolling in courses:', error)
+      toast.error('Failed to enroll in courses')
     }
   }
 
@@ -416,7 +450,18 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               {(mode === 'view' || mode === 'edit') && student && (
                 <div className="lg:col-span-3">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Current Course Registrations
+                    <div className="flex items-center justify-between">
+                      <span>Current Course Registrations</span>
+                      {mode === 'edit' && (
+                        <button
+                          type="button"
+                          onClick={() => fetchStudentRegistrations()}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Refresh
+                        </button>
+                      )}
+                    </div>
                   </label>
                   <div className="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
                     {loadingRegistrations ? (
@@ -427,7 +472,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                     ) : studentRegistrations.length > 0 ? (
                       <div className="space-y-3">
                         {studentRegistrations.map(registration => (
-                          <div key={registration.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-200">
+                          <div key={registration.id} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-200 group">
                             <div className="flex items-center space-x-3">
                               <div className="p-2 bg-blue-100 rounded-lg">
                                 <BookOpen className="h-4 w-4 text-blue-600" />
@@ -462,6 +507,16 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                               }`}>
                                 {registration.status}
                               </span>
+                              {mode === 'edit' && registration.status === 'enrolled' && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleUnenrollFromCourse(registration.id)}
+                                  className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all duration-200"
+                                  title="Drop Course"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -471,8 +526,105 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                         <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-sm text-gray-500">No course registrations found</p>
                         <p className="text-xs text-gray-400 mt-1">This student is not currently enrolled in any courses</p>
+                        {mode === 'edit' && (
+                          <button
+                            type="button"
+                            onClick={() => setShowCourseSelection(true)}
+                            className="mt-3 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Add Courses
+                          </button>
+                        )}
                       </div>
                     )}
+                  </div>
+                  
+                  {/* Add Course Selection for Edit Mode */}
+                  {mode === 'edit' && studentRegistrations.length > 0 && (
+                    <div className="mt-4">
+                      <button
+                        type="button"
+                        onClick={() => setShowCourseSelection(true)}
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center"
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add More Courses
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Course Selection Modal for Edit Mode */}
+              {showCourseSelection && (
+                <div className="lg:col-span-3">
+                  <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-semibold text-blue-900">Add Courses</h4>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCourseSelection(false)
+                          setSelectedCourses([])
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="max-h-48 overflow-y-auto mb-4">
+                      {courses.length > 0 ? (
+                        <div className="space-y-2">
+                          {courses
+                            .filter(course => !studentRegistrations.some(reg => reg.Course?.id === course.id))
+                            .map(course => (
+                            <label key={course.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors duration-200">
+                              <input
+                                type="checkbox"
+                                checked={selectedCourses.includes(course.id)}
+                                onChange={() => handleCourseToggle(course.id)}
+                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs font-semibold text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
+                                    {course.course_code}
+                                  </span>
+                                  <span className="text-sm font-medium text-gray-900 truncate">
+                                    {course.course_name}
+                                  </span>
+                                </div>
+                                {course.instructor && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    Instructor: {course.instructor}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-4">
+                          <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500">No additional courses available</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleAddCourses}
+                        disabled={selectedCourses.length === 0}
+                        className="btn btn-primary text-sm py-2 px-4 disabled:opacity-50"
+                      >
+                        Add Selected Courses
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
