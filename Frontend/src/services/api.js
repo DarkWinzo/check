@@ -3,7 +3,7 @@ import axios from 'axios'
 const API_BASE_URL = import.meta.env.VITE_API_URL || (
   import.meta.env.MODE === 'production' 
     ? '/api'  // Use relative path in production
-    : 'http://localhost:5000/api'  // Use full URL in development
+    : 'http://localhost:5000/api'
 )
 
 console.log('API Base URL:', API_BASE_URL)
@@ -44,9 +44,14 @@ api.interceptors.response.use(
       message: error.message
     })
     
-    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/')) {
+    // Only redirect to login for 401 errors on protected routes
+    if (error.response?.status === 401 && 
+        !error.config?.url?.includes('/auth/') && 
+        !error.config?.url?.includes('/login')) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
     }
     
     // Add more specific error handling
@@ -56,6 +61,7 @@ api.interceptors.response.use(
       console.error('Client Error:', error.response.data)
     } else if (error.code === 'NETWORK_ERROR') {
       console.error('Network Error:', error.message)
+      // Don't redirect on network errors, let components handle gracefully
     }
     
     return Promise.reject(error)

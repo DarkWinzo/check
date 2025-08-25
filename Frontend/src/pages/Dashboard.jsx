@@ -82,41 +82,69 @@ const Dashboard = () => {
   }, [])
 
   const fetchDashboardData = useCallback(async () => {
-    if (dataLoaded) return // Prevent multiple API calls
+    // Allow refetching if needed
     
     try {
       setLoading(true)
       
       if (user?.role === 'admin') {
-        const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-          studentsAPI.getAll({ limit: 100 }),
-          coursesAPI.getAll({ limit: 100 }),
-          registrationsAPI.getAll({ limit: 10 })
-        ])
+        try {
+          const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
+            studentsAPI.getAll({ limit: 100 }).catch(() => ({ data: { pagination: { totalCount: 0 }, students: [] } })),
+            coursesAPI.getAll({ limit: 100 }).catch(() => ({ data: { pagination: { totalCount: 0 }, courses: [] } })),
+            registrationsAPI.getAll({ limit: 10 }).catch(() => ({ data: { pagination: { totalCount: 0 }, registrations: [] } }))
+          ])
 
-        setStats({
-          totalStudents: studentsRes.data.pagination?.totalCount || 0,
-          totalCourses: coursesRes.data.pagination?.totalCount || 0,
-          totalRegistrations: registrationsRes.data.pagination?.totalCount || 0,
-          activeStudents: studentsRes.data.students?.filter(s => s.status === 'active').length || 0
-        })
+          setStats({
+            totalStudents: studentsRes.data.pagination?.totalCount || 0,
+            totalCourses: coursesRes.data.pagination?.totalCount || 0,
+            totalRegistrations: registrationsRes.data.pagination?.totalCount || 0,
+            activeStudents: studentsRes.data.students?.filter(s => s.status === 'active').length || 0
+          })
 
-        setRecentActivity(registrationsRes.data.registrations?.slice(0, 5) || [])
+          setRecentActivity(registrationsRes.data.registrations?.slice(0, 5) || [])
+        } catch (error) {
+          console.error('Error fetching admin data:', error)
+          // Set default values for admin
+          setStats({
+            totalStudents: 0,
+            totalCourses: 0,
+            totalRegistrations: 0,
+            activeStudents: 0
+          })
+          setRecentActivity([])
+        }
       } else {
         // For students, fetch their own data
-        const coursesRes = await coursesAPI.getAll({ limit: 20 })
-        setStats({
-          totalCourses: coursesRes.data.pagination?.totalCount || 0,
-          availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0
-        })
+        try {
+          const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch(() => ({ data: { pagination: { totalCount: 0 }, courses: [] } }))
+          setStats({
+            totalCourses: coursesRes.data.pagination?.totalCount || 0,
+            availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0
+          })
+        } catch (error) {
+          console.error('Error fetching student data:', error)
+          // Set default values for students
+          setStats({
+            totalCourses: 0,
+            availableCourses: 0
+          })
+        }
       }
       setDataLoaded(true)
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
+      // Set default stats on error
+      setStats({
+        totalStudents: 0,
+        totalCourses: 0,
+        totalRegistrations: 0,
+        activeStudents: 0
+      })
     } finally {
       setLoading(false)
     }
-  }, [user?.role, dataLoaded])
+  }, [user?.role])
 
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, bgGradient }) => (
     <div className={`relative overflow-hidden rounded-2xl ${bgGradient} p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group`}>
