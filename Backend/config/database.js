@@ -221,8 +221,8 @@ export async function initializeDatabase() {
             throw new Error('Database connection failed');
         }
         
-        // Sync all models
-        await DATABASE.sync({ force: false, alter: true });
+        // Sync all models - use alter: false to avoid schema conflicts
+        await DATABASE.sync({ force: false, alter: false });
         
         console.log('Database synchronized successfully');
         
@@ -230,7 +230,17 @@ export async function initializeDatabase() {
         await createDefaultAdmin();
     } catch (error) {
         console.error('Error initializing database:', error);
-        throw error;
+        
+        // If sync fails, try without alter
+        try {
+            console.log('Retrying database sync without alter...');
+            await DATABASE.sync({ force: false });
+            console.log('Database synchronized successfully on retry');
+            await createDefaultAdmin();
+        } catch (retryError) {
+            console.error('Database sync failed on retry:', retryError);
+            throw retryError;
+        }
     }
 }
 
