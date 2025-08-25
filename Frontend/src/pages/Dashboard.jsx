@@ -35,12 +35,14 @@ const Dashboard = () => {
     totalStudents: 0,
     totalCourses: 0,
     totalRegistrations: 0,
-    activeStudents: 0
+    activeStudents: 0,
+    availableCourses: 0
   })
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
   const [currentTime, setCurrentTime] = useState(new Date())
   const [dataLoaded, setDataLoaded] = useState(false)
+  const [error, setError] = useState(null)
 
   // Stable chart data - won't change unless explicitly updated
   const enrollmentTrendData = useMemo(() => [
@@ -84,20 +86,21 @@ const Dashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       
       if (user?.role === 'admin') {
         try {
           const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
             studentsAPI.getAll({ limit: 100 }).catch((error) => {
-              if (process.env.NODE_ENV === 'development') console.error('Error fetching students:', error);
+              console.error('Error fetching students:', error);
               return { data: { pagination: { totalCount: 0 }, students: [] } };
             }),
             coursesAPI.getAll({ limit: 100 }).catch((error) => {
-              if (process.env.NODE_ENV === 'development') console.error('Error fetching courses:', error);
+              console.error('Error fetching courses:', error);
               return { data: { pagination: { totalCount: 0 }, courses: [] } };
             }),
             registrationsAPI.getAll({ limit: 10 }).catch((error) => {
-              if (process.env.NODE_ENV === 'development') console.error('Error fetching registrations:', error);
+              console.error('Error fetching registrations:', error);
               return { data: { pagination: { totalCount: 0 }, registrations: [] } };
             })
           ])
@@ -111,7 +114,7 @@ const Dashboard = () => {
 
           setRecentActivity(registrationsRes.data.registrations?.slice(0, 5) || [])
         } catch (error) {
-          if (process.env.NODE_ENV === 'development') console.error('Error fetching admin data:', error);
+          console.error('Error fetching admin data:', error);
           setStats({
             totalStudents: 0,
             totalCourses: 0,
@@ -119,34 +122,58 @@ const Dashboard = () => {
             activeStudents: 0
           })
           setRecentActivity([])
+          setError('Failed to load admin dashboard data')
         }
       } else {
         try {
           const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch((error) => {
-            if (process.env.NODE_ENV === 'development') console.error('Error fetching courses for student:', error);
+            console.error('Error fetching courses for student:', error);
             return { data: { pagination: { totalCount: 0 }, courses: [] } };
           })
+          
+          // For students, also try to get their registrations
+          let myRegistrations = []
+          try {
+            // Get current student profile first
+            const studentProfile = await studentsAPI.getById('me').catch(() => null)
+            if (studentProfile?.data) {
+              const registrationsRes = await studentsAPI.getRegistrations(studentProfile.data.id).catch(() => ({ data: { data: [] } }))
+              myRegistrations = registrationsRes.data?.data || []
+            }
+          } catch (error) {
+            console.error('Error fetching student registrations:', error);
+          }
+          
           setStats({
             totalCourses: coursesRes.data.pagination?.totalCount || 0,
-            availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0
+            availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0,
+            myRegistrations: myRegistrations.length || 0,
+            completedCourses: myRegistrations.filter(r => r.status === 'completed').length || 0
           })
         } catch (error) {
-          if (process.env.NODE_ENV === 'development') console.error('Error fetching student data:', error);
+          console.error('Error fetching student data:', error);
           setStats({
             totalCourses: 0,
-            availableCourses: 0
+            availableCourses: 0,
+            myRegistrations: 0,
+            completedCourses: 0
           })
+          setError('Failed to load student dashboard data')
         }
       }
       setDataLoaded(true)
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') console.error('Error fetching dashboard data:', error);
+      console.error('Error fetching dashboard data:', error);
       setStats({
         totalStudents: 0,
         totalCourses: 0,
         totalRegistrations: 0,
-        activeStudents: 0
+        activeStudents: 0,
+        availableCourses: 0,
+        myRegistrations: 0,
+        completedCourses: 0
       })
+      setError('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
@@ -361,14 +388,14 @@ const Dashboard = () => {
             />
             <StatCard
               title="My Registrations"
-              value="0"
+              value={stats.myRegistrations || 0}
               icon={Award}
               color="bg-gradient-to-r from-green-500 to-green-600"
               bgGradient="bg-gradient-to-br from-green-500 to-green-600"
             />
             <StatCard
               title="Completed Courses"
-              value="0"
+              value={stats.completedCourses || 0}
               icon={Target}
               color="bg-gradient-to-r from-purple-500 to-purple-600"
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
@@ -383,6 +410,30 @@ const Dashboard = () => {
           </>
         )}
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-red-100 rounded-xl">
+              <Activity className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">Dashboard Error</h3>
+              <p className="text-red-600">{error}</p>
+              <button 
+                onClick={() => {
+                  setError(null)
+                  fetchDashboardData()
+                }}
+                className="mt-2 text-sm text-red-700 hover:text-red-800 font-medium underline"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Charts Section - Only for Admin */}
       {user?.role === 'admin' && (

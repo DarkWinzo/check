@@ -30,9 +30,7 @@ export const AuthProvider = ({ children }) => {
       const response = await authAPI.verify()
       setUser(response.data.user)
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Auth check failed:', error.message);
-      }
+      console.error('Auth check failed:', error.message);
       localStorage.removeItem('token')
     } finally {
       setLoading(false)
@@ -49,13 +47,11 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true }
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Login error:', error.message);
-      }
+      console.error('Login error:', error);
       return { 
         success: false, 
         error: error.response?.data?.message || 
-               (!error.response) ? 'Cannot connect to server. Please check if the backend is running.' :
+               (!error.response) ? 'Cannot connect to server. Please check if the backend is running on port 5000.' :
                'Login failed. Please try again.' 
       }
     }

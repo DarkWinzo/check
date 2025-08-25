@@ -156,7 +156,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
 });
 
 // Get all registrations (admin only)
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { page = 1, limit = 10, status = '', courseId = '', studentId = '' } = req.query;
     const offset = (page - 1) * limit;

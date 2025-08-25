@@ -143,10 +143,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
-    let whereClause = { id }
+    let whereClause = {}
     
     // Students can only view their own profile, admins can view any
-    if (req.user.role === 'student') {
+    if (req.user.role === 'student' || id === 'me') {
       // For students, find their student record by user_id
       const student = await Student.findOne({
         where: { user_id: req.user.id },
@@ -163,6 +163,9 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.json(student)
     }
 
+    // Handle numeric ID for admin access
+    whereClause = { id: parseInt(id) }
+    
     // For admins, get any student by ID
     const student = await Student.findOne({
       where: whereClause,

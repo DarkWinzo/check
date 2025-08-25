@@ -112,9 +112,7 @@ const Courses = () => {
       const response = await coursesAPI.getRegistrations(course.id)
       setEnrolledStudents(response.data || [])
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error fetching course enrollments:', error);
-      }
+      console.error('Error fetching course enrollments:', error);
       const message = error.response?.data?.message || 'Failed to fetch course enrollments'
       toast.error(message)
       setEnrolledStudents([])

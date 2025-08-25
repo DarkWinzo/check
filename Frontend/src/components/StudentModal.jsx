@@ -66,9 +66,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                            Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Error fetching student registrations:', error);
-      }
+      console.error('Error fetching student registrations:', error);
       setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)
@@ -105,13 +103,9 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
           for (const courseId of selectedCourses) {
             try {
               // Note: Auto-enrollment requires user account creation
-              if (process.env.NODE_ENV === 'development') {
-                console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
-              }
+              console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
             } catch (error) {
-              if (process.env.NODE_ENV === 'development') {
-                console.error(`Failed to enroll in course ${courseId}:`, error);
-              }
+              console.error(`Failed to enroll in course ${courseId}:`, error);
             }
           }
         }
@@ -130,9 +124,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-     if (process.env.NODE_ENV === 'development') {
-       console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error);
-     }
+      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error);
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         `Failed to ${mode === 'create' ? 'create' : 'update'} student. Please try again.`

@@ -57,9 +57,7 @@ const CourseModal = ({ isOpen, onClose, onSuccess, course, mode = 'create' }) =>
       }
       onSuccess()
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} course:`, error);
-      }
+      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} course:`, error);
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         `Failed to ${mode === 'create' ? 'create' : 'update'} course. Please check your input and try again.`
