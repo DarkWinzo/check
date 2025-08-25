@@ -273,7 +273,6 @@ const Dashboard = () => {
       
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/10 rounded-3xl"></div>
-      </div>
       
       <div className="relative z-10">
         <div className="flex items-center justify-between mb-4">
