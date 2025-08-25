@@ -235,6 +235,10 @@ const Layout = ({ children }) => {
           </div>
         </main>
       </div>
+
+      {/* Modals */}
+      <ProfileModal />
+      <SupportModal />
     </div>
   )
 }

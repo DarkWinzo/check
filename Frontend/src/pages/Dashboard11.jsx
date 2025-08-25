@@ -283,8 +283,8 @@ const Dashboard = () => {
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
             />
             <StatCard
-              title="Current Semester"
-              value="Fall 2025"
+              title="Academic Year"
+              value="2024-25"
               icon={Calendar}
               color="bg-gradient-to-r from-orange-500 to-orange-600"
               bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"

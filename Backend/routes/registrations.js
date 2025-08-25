@@ -78,7 +78,7 @@ router.post('/', authenticateToken, [
       const completeRegistration = await Registration.findByPk(registration.id, {
         include: [{
           model: Course,
-          attributes: ['id', 'course_code', 'course_name', 'instructor', 'credits']
+          attributes: ['id', 'course_code', 'course_name', 'instructor', 'duration', 'description']
         }, {
           model: Student,
           attributes: ['id', 'student_id', 'first_name', 'last_name', 'email']
