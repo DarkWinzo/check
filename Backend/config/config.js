@@ -21,6 +21,11 @@ export const config = {
 
   // Frontend URL
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
+  
+  // Additional allowed origins for CORS
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? 
+    process.env.ALLOWED_ORIGINS.split(',') : 
+    ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:5173', 'http://127.0.0.1:5173'],
 
   // Database URL (for SQLite)
   DATABASE_URL: process.env.DATABASE_URL || 'local',

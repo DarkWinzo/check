@@ -1,10 +1,30 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || (
-  import.meta.env.MODE === 'production' 
-    ? '/api'  // Use relative path in production
-    : 'http://localhost:5000/api'
-)
+// More robust API URL detection
+const getApiBaseUrl = () => {
+  // Check for explicit environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // In production, use relative path
+  if (import.meta.env.MODE === 'production') {
+    return '/api';
+  }
+  
+  // In development, try to detect the correct localhost
+  const currentHost = window.location.hostname;
+  const apiPort = '5000';
+  
+  if (currentHost === '127.0.0.1' || currentHost === 'localhost') {
+    return `http://${currentHost}:${apiPort}/api`;
+  }
+  
+  // Fallback
+  return 'http://localhost:5000/api';
+}
+
+const API_BASE_URL = getApiBaseUrl();
 
 console.log('API Base URL:', API_BASE_URL)
 console.log('Environment Mode:', import.meta.env.MODE)
@@ -41,16 +61,31 @@ api.interceptors.response.use(
       method: error.config?.method,
       status: error.response?.status,
       data: error.response?.data,
-      message: error.message
+      message: error.message,
+      baseURL: API_BASE_URL
     })
     
-    // Only redirect to login for 401 errors on protected routes
-    if (error.response?.status === 401 && 
-        !error.config?.url?.includes('/auth/') && 
-        !error.config?.url?.includes('/login')) {
-      localStorage.removeItem('token')
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login'
+    // Handle network errors more gracefully
+    if (error.code === 'ERR_NETWORK' || error.code === 'NETWORK_ERROR') {
+      console.error('Network Error - API might be down:', API_BASE_URL);
+      // Don't redirect on network errors
+      return Promise.reject(error);
+    }
+    
+    // Handle CORS errors
+    if (error.message?.includes('CORS') || error.response?.status === 0) {
+      console.error('CORS Error - Check backend CORS configuration');
+      return Promise.reject(error);
+    }
+    
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401) {
+      // Only redirect if not already on login page and not a login attempt
+      if (!error.config?.url?.includes('/auth/login') && 
+          window.location.pathname !== '/login') {
+        console.log('Unauthorized - redirecting to login');
+        localStorage.removeItem('token');
+        window.location.href = '/login';
       }
     }
     

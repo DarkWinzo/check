@@ -81,11 +81,11 @@ const Dashboard = () => {
     return () => clearInterval(timer)
   }, [])
 
+  // Add error handling for dashboard data fetching
   const fetchDashboardData = useCallback(async () => {
-    // Allow refetching if needed
-    
     try {
       setLoading(true)
+      console.log('Fetching dashboard data for user role:', user?.role);
       
       if (user?.role === 'admin') {
         try {

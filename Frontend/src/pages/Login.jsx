@@ -21,15 +21,18 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
+      console.log('Login form submitted:', { email: data.email });
       const result = await login(data.email, data.password)
       
       if (result.success) {
         toast.success('Welcome back!')
         navigate('/dashboard')
       } else {
+        console.error('Login failed:', result.error);
         toast.error(result.error)
       }
     } catch (error) {
+      console.error('Login form error:', error);
       toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)
