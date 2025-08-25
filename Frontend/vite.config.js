@@ -1,9 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import os from 'os'
 
 // Get network IP for development
 const getNetworkIP = () => {
-  const os = require('os');
   const networkInterfaces = os.networkInterfaces();
   
   for (const interfaceName of Object.keys(networkInterfaces)) {

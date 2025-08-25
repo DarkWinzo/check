@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
+import os from 'os';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import config from './config/config.js';
@@ -30,7 +31,6 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     // Get current network interfaces to allow network host access
-    const os = require('os');
     const networkInterfaces = os.networkInterfaces();
     const networkIPs = [];
     

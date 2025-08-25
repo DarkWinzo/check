@@ -1,8 +1,8 @@
 import dotenv from 'dotenv';
+import os from 'os';
 
 // Get network IP
 const getNetworkIP = () => {
-  const os = require('os');
   const networkInterfaces = os.networkInterfaces();
   
   for (const interfaceName of Object.keys(networkInterfaces)) {

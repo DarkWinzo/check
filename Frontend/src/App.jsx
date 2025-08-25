@@ -11,20 +11,13 @@ import LoadingSpinner from './components/LoadingSpinner'
 function App() {
   const { user, loading } = useAuth()
 
-  // Add error boundary for better debugging
-  React.useEffect(() => {
-    console.log('App component - User:', user, 'Loading:', loading);
-  }, [user, loading]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-        <LoadingSpinner size="lg" />
+          <LoadingSpinner size="lg" />
           <p className="mt-4 text-gray-600">Loading application...</p>
-          <p className="mt-2 text-sm text-gray-400">
-            If this takes too long, check if the backend server is running on port 5000
-          </p>
         </div>
       </div>
     )

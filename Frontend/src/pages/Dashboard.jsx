@@ -90,9 +90,18 @@ const Dashboard = () => {
       if (user?.role === 'admin') {
         try {
           const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-            studentsAPI.getAll({ limit: 100 }).catch(() => ({ data: { pagination: { totalCount: 0 }, students: [] } })),
-            coursesAPI.getAll({ limit: 100 }).catch(() => ({ data: { pagination: { totalCount: 0 }, courses: [] } })),
-            registrationsAPI.getAll({ limit: 10 }).catch(() => ({ data: { pagination: { totalCount: 0 }, registrations: [] } }))
+            studentsAPI.getAll({ limit: 100 }).catch((error) => {
+              console.error('Error fetching students:', error);
+              return { data: { pagination: { totalCount: 0 }, students: [] } };
+            }),
+            coursesAPI.getAll({ limit: 100 }).catch((error) => {
+              console.error('Error fetching courses:', error);
+              return { data: { pagination: { totalCount: 0 }, courses: [] } };
+            }),
+            registrationsAPI.getAll({ limit: 10 }).catch((error) => {
+              console.error('Error fetching registrations:', error);
+              return { data: { pagination: { totalCount: 0 }, registrations: [] } };
+            })
           ])
 
           setStats({
@@ -117,7 +126,10 @@ const Dashboard = () => {
       } else {
         // For students, fetch their own data
         try {
-          const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch(() => ({ data: { pagination: { totalCount: 0 }, courses: [] } }))
+          const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch((error) => {
+            console.error('Error fetching courses for student:', error);
+            return { data: { pagination: { totalCount: 0 }, courses: [] } };
+          })
           setStats({
             totalCourses: coursesRes.data.pagination?.totalCount || 0,
             availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0

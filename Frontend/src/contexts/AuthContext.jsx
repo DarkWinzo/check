@@ -33,11 +33,15 @@ export const AuthProvider = ({ children }) => {
       setUser(response.data.user)
     } catch (error) {
       console.error('Auth check failed:', error.message);
-      console.error('Error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        config: error.config
-      });
+      
+      // Only log detailed errors if it's not a network error
+      if (error.response) {
+        console.error('Error details:', {
+          status: error.response?.status,
+          data: error.response?.data
+        });
+      }
+      
       localStorage.removeItem('token')
     } finally {
       setLoading(false)
@@ -60,14 +64,12 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error details:', {
         message: error.message,
         status: error.response?.status,
-        data: error.response?.data,
-        url: error.config?.url,
-        baseURL: error.config?.baseURL
+        data: error.response?.data
       });
       return { 
         success: false, 
         error: error.response?.data?.message || 
-               error.message?.includes('Network Error') ? 'Cannot connect to server. Please check if the backend is running.' :
+               (error.code === 'ERR_NETWORK' || !error.response) ? 'Cannot connect to server. Please check if the backend is running on port 5000.' :
                'Login failed. Please try again.' 
       }
     }

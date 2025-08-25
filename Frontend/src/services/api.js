@@ -62,7 +62,7 @@ api.interceptors.response.use(
     })
     
     // Handle network errors more gracefully
-    if (error.code === 'ERR_NETWORK' || error.code === 'NETWORK_ERROR') {
+    if (error.code === 'ERR_NETWORK' || error.code === 'NETWORK_ERROR' || !error.response) {
       console.error('Network Error - API might be down:', API_BASE_URL);
       // Don't redirect on network errors
       return Promise.reject(error);
@@ -83,16 +83,6 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         window.location.href = '/login';
       }
-    }
-    
-    // Add more specific error handling
-    if (error.response?.status >= 500) {
-      console.error('Server Error:', error.response.data)
-    } else if (error.response?.status >= 400) {
-      console.error('Client Error:', error.response.data)
-    } else if (error.code === 'NETWORK_ERROR') {
-      console.error('Network Error:', error.message)
-      // Don't redirect on network errors, let components handle gracefully
     }
     
     return Promise.reject(error)

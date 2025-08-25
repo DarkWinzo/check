@@ -48,6 +48,161 @@ const Layout = ({ children }) => {
     { name: 'Students', href: '/students', icon: Users },
   ]
 
+    if (!showProfileModal) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowProfileModal(false)}
+          />
+          <div className="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Profile Settings</h3>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={profileData.currentPassword}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                      className="input pr-10"
+                      placeholder="Enter current password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={profileData.newPassword}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, newPassword: e.target.value }))}
+                    className="input"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={profileData.confirmPassword}
+                    onChange={(e) => setProfileData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                    className="input"
+                    placeholder="Confirm new password"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="btn btn-outline"
+              >
+                Cancel
+              </button>
+              <button className="btn btn-primary">
+                <Save className="h-4 w-4 mr-2" />
+                Update Password
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const SupportModal = () => {
+    if (!showSupportModal) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowSupportModal(false)}
+          />
+          <div className="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-lg font-bold text-gray-900">Help & Support</h3>
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Heart className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">Need Help?</h4>
+                  <p className="text-gray-600 mb-6">We're here to assist you with any questions or issues.</p>
+                </div>
+                <div className="space-y-3">
+                  <a
+                    href="mailto:taskflowt@gmail.com?subject=Student Registration System - Support Request"
+                    className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                  >
+                    <Mail className="h-5 w-5 text-gray-400 mr-3" />
+                    <div>
+                      <div className="font-medium text-gray-900">Email Support</div>
+                      <div className="text-sm text-gray-500">taskflowt@gmail.com</div>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-gray-400 ml-auto" />
+                  </a>
+                  <a
+                    href="https://github.com/your-repo"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+                  >
+                    <Github className="h-5 w-5 text-gray-400 mr-3" />
+                    <div>
+                      <div className="font-medium text-gray-900">GitHub Repository</div>
+                      <div className="text-sm text-gray-500">Report issues & contribute</div>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-gray-400 ml-auto" />
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="btn btn-outline"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}

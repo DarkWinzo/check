@@ -215,6 +215,12 @@ export async function testConnection() {
 // Initialize database
 export async function initializeDatabase() {
     try {
+        // Test connection first
+        const connected = await testConnection();
+        if (!connected) {
+            throw new Error('Database connection failed');
+        }
+        
         // Sync all models
         await DATABASE.sync({ force: false, alter: true });
         
