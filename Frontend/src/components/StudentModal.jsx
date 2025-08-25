@@ -61,9 +61,10 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     try {
       setLoadingRegistrations(true)
       const response = await studentsAPI.getRegistrations(student.id)
-      setStudentRegistrations(response.data)
+      setStudentRegistrations(response.data || [])
     } catch (error) {
       console.error('Error fetching student registrations:', error)
+      setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)
     }

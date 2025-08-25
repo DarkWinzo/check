@@ -281,11 +281,11 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
       order: [['registration_date', 'DESC']]
     });
 
-    res.json(registrations);
+    res.json(registrations || []);
 
   } catch (error) {
     console.error('Error fetching student registrations:', error);
-    res.status(500).json({ message: 'Server error fetching registrations' });
+    res.status(500).json({ message: 'Server error fetching registrations', data: [] });
   }
 });
 

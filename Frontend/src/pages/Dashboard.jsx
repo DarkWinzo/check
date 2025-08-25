@@ -9,8 +9,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   GraduationCap,
-  Sparkles
+  Sparkles,
+  Search,
+  Filter
 } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 const Dashboard = () => {
@@ -18,9 +21,20 @@ const Dashboard = () => {
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCourses: 0,
-    studentsPerCourse: 0
+    studentsPerCourse: 0,
+    totalRegistrations: 0
   })
+  const [chartData, setChartData] = useState({
+    enrollmentByMonth: [],
+    coursePopularity: [],
+    statusDistribution: []
+  })
+  const [students, setStudents] = useState([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({})
   const [loading, setLoading] = useState(true)
+  const [studentsLoading, setStudentsLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
@@ -29,14 +43,20 @@ const Dashboard = () => {
     return () => clearInterval(timer)
   }, [])
 
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      fetchStudents()
+    }
+  }, [searchTerm, currentPage, user])
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
       
       if (user?.role === 'admin') {
         const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-          studentsAPI.getAll({ limit: 100 }),
-          coursesAPI.getAll({ limit: 100 }),
+          studentsAPI.getAll({ limit: 1000 }),
+          coursesAPI.getAll({ limit: 1000 }),
           registrationsAPI.getAll({ limit: 1000 })
         ])
 
@@ -45,19 +65,25 @@ const Dashboard = () => {
         const totalRegistrations = registrationsRes.data.pagination.totalCount
         
         // Calculate average students per course
-        const studentsPerCourse = totalCourses > 0 ? Math.round(totalRegistrations / totalCourses * 10) / 10 : 0
+        const studentsPerCourse = totalCourses > 0 ? Math.round((totalRegistrations / totalCourses) * 10) / 10 : 0
 
         setStats({
           totalStudents,
           totalCourses,
-          studentsPerCourse
+          studentsPerCourse,
+          totalRegistrations
         })
+
+        // Prepare chart data
+        prepareChartData(studentsRes.data.students, coursesRes.data.courses, registrationsRes.data.registrations)
       } else {
         // For students, show limited stats
         const coursesRes = await coursesAPI.getAll({ limit: 20 })
         setStats({
           totalCourses: coursesRes.data.pagination.totalCount,
-          studentsPerCourse: 0
+          studentsPerCourse: 0,
+          totalStudents: 0,
+          totalRegistrations: 0
         })
       }
     } catch (error) {
@@ -65,6 +91,82 @@ const Dashboard = () => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchStudents = async () => {
+    if (user?.role !== 'admin') return
+    
+    try {
+      setStudentsLoading(true)
+      const params = {
+        page: currentPage,
+        limit: 5,
+        search: searchTerm
+      }
+
+      const response = await studentsAPI.getAll(params)
+      setStudents(response.data.students)
+      setPagination(response.data.pagination)
+    } catch (error) {
+      console.error('Error fetching students:', error)
+    } finally {
+      setStudentsLoading(false)
+    }
+  }
+
+  const prepareChartData = (students, courses, registrations) => {
+    // Enrollment by month (last 6 months)
+    const monthlyData = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+      const monthYear = date.toISOString().slice(0, 7)
+      
+      const enrollments = registrations.filter(reg => 
+        reg.registration_date.startsWith(monthYear)
+      ).length
+      
+      monthlyData.push({
+        month: monthName,
+        enrollments
+      })
+    }
+
+    // Course popularity (top 5 courses by enrollment)
+    const courseEnrollments = {}
+    registrations.forEach(reg => {
+      const courseId = reg.course_id
+      const course = courses.find(c => c.id === courseId)
+      if (course) {
+        const courseName = course.course_name.length > 20 
+          ? course.course_name.substring(0, 20) + '...' 
+          : course.course_name
+        courseEnrollments[courseName] = (courseEnrollments[courseName] || 0) + 1
+      }
+    })
+
+    const coursePopularity = Object.entries(courseEnrollments)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([name, count]) => ({ name, students: count }))
+
+    // Status distribution
+    const statusCounts = students.reduce((acc, student) => {
+      acc[student.status] = (acc[student.status] || 0) + 1
+      return acc
+    }, {})
+
+    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: count
+    }))
+
+    setChartData({
+      enrollmentByMonth: monthlyData,
+      coursePopularity,
+      statusDistribution
+    })
   }
 
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, bgGradient }) => (
@@ -99,6 +201,8 @@ const Dashboard = () => {
       </div>
     </div>
   )
+
+  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
 
   if (loading && Object.values(stats).every(val => val === 0)) {
     return (
@@ -169,7 +273,7 @@ const Dashboard = () => {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {user?.role === 'admin' ? (
           <>
             <StatCard
@@ -199,6 +303,15 @@ const Dashboard = () => {
               color="bg-gradient-to-r from-purple-500 to-purple-600"
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
             />
+            <StatCard
+              title="Total Registrations"
+              value={stats.totalRegistrations}
+              icon={Activity}
+              trend="up"
+              trendValue="15"
+              color="bg-gradient-to-r from-orange-500 to-orange-600"
+              bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
+            />
           </>
         ) : (
           <>
@@ -223,27 +336,206 @@ const Dashboard = () => {
               color="bg-gradient-to-r from-purple-500 to-purple-600"
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
             />
+            <StatCard
+              title="Current Semester"
+              value="Fall 2025"
+              icon={Activity}
+              color="bg-gradient-to-r from-orange-500 to-orange-600"
+              bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
+            />
           </>
         )}
       </div>
 
-      {/* Welcome Message */}
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-        <div className="flex items-center justify-center mb-6">
-          <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
-            <GraduationCap className="h-8 w-8 text-white" />
+      {user?.role === 'admin' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Charts Section */}
+          <div className="space-y-6">
+            {/* Enrollment Trend Chart */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Enrollment Trend (Last 6 Months)</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={chartData.enrollmentByMonth}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="enrollments" stroke="#3B82F6" strokeWidth={3} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Student Status Distribution */}
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Student Status Distribution</h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={chartData.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {chartData.statusDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Course Popularity Chart */}
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Most Popular Courses</h3>
+            <ResponsiveContainer width="100%" height={520}>
+              <BarChart data={chartData.coursePopularity} layout="horizontal">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="name" type="category" width={120} />
+                <Tooltip />
+                <Bar dataKey="students" fill="#10B981" />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          {user?.role === 'admin' ? 'System Overview' : 'Your Academic Journey'}
-        </h2>
-        <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          {user?.role === 'admin' 
-            ? 'Use the navigation menu to manage students, courses, and view detailed reports. The statistics above provide a quick overview of your institution\'s current status.'
-            : 'Navigate through the menu to explore available courses, manage your registrations, and track your academic progress. Your learning journey starts here!'
-          }
-        </p>
-      </div>
+      )}
+
+      {/* Recent Students Section (Admin Only) */}
+      {user?.role === 'admin' && (
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl">
+                <Users className="h-6 w-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Recent Students</h2>
+            </div>
+            <div className="text-sm text-gray-500">Latest registrations</div>
+          </div>
+
+          {/* Search */}
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search students..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="input pl-10 w-full"
+              />
+            </div>
+          </div>
+
+          {/* Students List */}
+          {studentsLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <LoadingSpinner size="lg" />
+            </div>
+          ) : students.length > 0 ? (
+            <div className="space-y-4">
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white">
+                        {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {student.first_name} {student.last_name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {student.email} • ID: {student.student_id}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                      student.status === 'active'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {student.status}
+                    </span>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {new Date(student.enrollment_date).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    Showing {((pagination.currentPage - 1) * 5) + 1} to{' '}
+                    {Math.min(pagination.currentPage * 5, pagination.totalCount)} of{' '}
+                    {pagination.totalCount} students
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={!pagination.hasPrev}
+                      className="btn btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      disabled={!pagination.hasNext}
+                      className="btn btn-outline text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                <Users className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {searchTerm ? 'No students found' : 'No students yet'}
+              </h3>
+              <p className="text-gray-600">
+                {searchTerm 
+                  ? 'Try adjusting your search criteria.'
+                  : 'Students will appear here once they are added to the system.'
+                }
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Welcome Message for Students */}
+      {user?.role === 'student' && (
+        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
+          <div className="flex items-center justify-center mb-6">
+            <div className="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg">
+              <GraduationCap className="h-8 w-8 text-white" />
+            </div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            Your Academic Journey
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            Navigate through the menu to explore available courses, manage your registrations, and track your academic progress. Your learning journey starts here!
+          </p>
+        </div>
+      )}
     </div>
   )
 }

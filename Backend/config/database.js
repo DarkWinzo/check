@@ -240,21 +240,11 @@ async function createDefaultAdmin() {
             // Hash the password
             const hashedPassword = await bcrypt.hash(config.ADMIN_PASSWORD, 12);
             
-            // Create admin user
-            const adminUser = await User.create({
+            // Create admin user (without student profile)
+            await User.create({
                 email: config.ADMIN_EMAIL,
                 password: hashedPassword,
                 role: 'admin'
-            });
-
-            // Create admin student profile
-            await Student.create({
-                user_id: adminUser.id,
-                student_id: 'ADMIN001',
-                first_name: config.ADMIN_FIRST_NAME,
-                last_name: config.ADMIN_LAST_NAME,
-                email: config.ADMIN_EMAIL,
-                status: 'active'
             });
 
             console.log('✅ Default admin user created successfully!');
