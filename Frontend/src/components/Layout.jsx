@@ -21,6 +21,7 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const Layout = ({ children }) => {
   const { user, logout } = useAuth()
@@ -327,4 +328,124 @@ const Layout = ({ children }) => {
                   to={item.href}
                   className={`flex items-center px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${
                     isActive
-                
+                      ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-xl transform scale-105'
+                      : 'text-gray-600 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 hover:text-gray-900 hover:shadow-lg hover:scale-105'
+                  }`}
+                >
+                  <Icon className={`mr-4 h-5 w-5 transition-all duration-300 ${
+                    isActive ? 'text-white' : 'text-gray-400 group-hover:text-primary-600'
+                  }`} />
+                  {item.name}
+                </Link>
+              )
+            })}
+          </nav>
+          <div className="border-t border-gray-200/50 p-6">
+            <div className="relative">
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 transition-all duration-300 group"
+              >
+                <div className="flex-shrink-0">
+                  <div className="h-12 w-12 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg">
+                    <span className="text-sm font-bold text-white">
+                      {user?.email?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                <div className="ml-4 flex-1 text-left">
+                  <p className="text-sm font-bold text-gray-900 group-hover:text-primary-700 transition-colors duration-300">
+                    {user?.email}
+                  </p>
+                  <p className="text-xs text-gray-500 capitalize font-medium">
+                    {user?.role}
+                  </p>
+                </div>
+              </button>
+
+              {/* Profile dropdown */}
+              {showProfileMenu && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-xl z-50">
+                  <div className="p-2">
+                    <button
+                      onClick={() => {
+                        setShowProfileModal(true)
+                        setShowProfileMenu(false)
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200"
+                    >
+                      <Settings className="mr-3 h-4 w-4" />
+                      Profile Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowSupportModal(true)
+                        setShowProfileMenu(false)
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-200"
+                    >
+                      <Heart className="mr-3 h-4 w-4" />
+                      Help & Support
+                    </button>
+                    <div className="border-t border-gray-100 my-2"></div>
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setShowProfileMenu(false)
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-sm font-medium text-red-600 rounded-xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200"
+                    >
+                      <LogOut className="mr-3 h-4 w-4" />
+                      Sign out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-72">
+        {/* Mobile header */}
+        <div className="lg:hidden">
+          <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="text-gray-500 hover:text-gray-600"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+            <div className="flex items-center space-x-2">
+              <GraduationCap className="h-6 w-6 text-primary-600" />
+              <span className="text-lg font-bold text-gray-900">SRS</span>
+            </div>
+            <div className="w-6" /> {/* Spacer */}
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="flex-1">
+          <div className="p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {/* Modals */}
+      <ProfileModal />
+      <SupportModal />
+
+      {/* Click outside handler for profile menu */}
+      {showProfileMenu && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowProfileMenu(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+export default Layout
