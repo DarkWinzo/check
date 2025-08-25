@@ -309,11 +309,11 @@ const Layout = ({ children }) => {
           <div className="flex items-center h-16 px-4 border-b">
             <div className="flex items-center space-x-3">
               <div className="p-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg">
-                <GraduationCap className="h-6 w-6 text-white" />
+                <GraduationCap className="h-7 w-7 text-white" />
               </div>
               <div>
-                <span className="text-lg font-bold gradient-text">EduFlow</span>
-                <p className="text-xs text-gray-500">Management System</p>
+                <span className="text-xl font-black gradient-text">EduFlow Pro</span>
+                <p className="text-xs text-gray-500 font-medium">Advanced Learning Platform</p>
               </div>
             </div>
           </div>
@@ -325,113 +325,6 @@ const Layout = ({ children }) => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group ${
+                  className={`flex items-center px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${
                     isActive
-                      ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-md'
-                  }`}
-                >
-                  <Icon className={`mr-3 h-5 w-5 transition-transform duration-200 ${
-                    isActive ? 'text-white' : 'group-hover:scale-110'
-                  }`} />
-                  {item.name}
-                </Link>
-              )
-            })}
-          </nav>
-          <div className="border-t border-gray-100 p-6">
-            <div className="flex items-center mb-6">
-              <div className="flex-shrink-0">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform duration-200" onClick={() => setShowProfileMenu(!showProfileMenu)}>
-                  <span className="text-sm font-semibold text-white">
-                    {user?.email?.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-semibold text-gray-900 truncate max-w-32 cursor-pointer hover:text-primary-600 transition-colors duration-200" onClick={() => setShowProfileMenu(!showProfileMenu)}>{user?.email}</p>
-                <p className="text-xs text-gray-500 capitalize bg-gray-100 px-2 py-1 rounded-full inline-block mt-1">{user?.role}</p>
-              </div>
-            </div>
-            
-            {/* Profile Menu */}
-            {showProfileMenu && (
-              <div className="mb-4 bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-                <div className="p-4 border-b border-gray-100">
-                  <h3 className="text-sm font-semibold text-gray-900">Account Settings</h3>
-                </div>
-                <div className="py-2">
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false)
-                      setShowProfileModal(true)
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
-                  >
-                    <User className="h-4 w-4 mr-3 text-gray-400" />
-                    Profile Settings
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowProfileMenu(false)
-                      setShowSupportModal(true)
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-200 flex items-center"
-                  >
-                    <Heart className="h-4 w-4 mr-3 text-gray-400" />
-                    Help & Support
-                  </button>
-                </div>
-              </div>
-            )}
-            
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-sm font-semibold text-gray-600 rounded-xl hover:bg-red-50 hover:text-red-700 transition-all duration-200 group"
-            >
-              <LogOut className="mr-3 h-5 w-5 group-hover:scale-110 transition-transform duration-200" />
-              Sign out
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="lg:pl-72">
-        {/* Top bar */}
-        <div className="sticky top-0 z-40 flex h-16 glass-card border-b border-gray-200/50 lg:hidden">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 lg:hidden hover:bg-gray-50 rounded-lg m-2"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
-          <div className="flex items-center flex-1 px-4">
-            <div className="flex items-center space-x-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-r from-primary-600 to-primary-700">
-                <GraduationCap className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-lg font-bold gradient-text">Student Portal</span>
-              <span className="text-xs text-gray-500 ml-2">v2.0</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Page content */}
-        <main className="flex-1 min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-          <div className="py-8">
-            <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10">
-              {children}
-            </div>
-          </div>
-        </main>
-      </div>
-
-      {/* Modals */}
-      <ProfileModal />
-      <SupportModal />
-    </div>
-  )
-}
-
-export default Layout
+                
