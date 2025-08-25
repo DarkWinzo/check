@@ -48,6 +48,7 @@ const Layout = ({ children }) => {
     { name: 'Students', href: '/students', icon: Users },
   ]
 
+  const ProfileModal = () => {
     if (!showProfileModal) return null
 
     return (
