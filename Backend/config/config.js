@@ -6,9 +6,9 @@ const getNetworkIP = () => {
   const networkInterfaces = os.networkInterfaces();
   
   for (const interfaceName of Object.keys(networkInterfaces)) {
-    for (const interface of networkInterfaces[interfaceName]) {
-      if (interface.family === 'IPv4' && !interface.internal) {
-        return interface.address;
+    for (const netInterface of networkInterfaces[interfaceName]) {
+      if (netInterface.family === 'IPv4' && !netInterface.internal) {
+        return netInterface.address;
       }
     }
   }

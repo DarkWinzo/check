@@ -35,10 +35,10 @@ app.use(cors({
     const networkIPs = [];
     
     Object.keys(networkInterfaces).forEach(interfaceName => {
-      networkInterfaces[interfaceName].forEach(interface => {
-        if (interface.family === 'IPv4' && !interface.internal) {
-          networkIPs.push(`http://${interface.address}:3000`);
-          networkIPs.push(`http://${interface.address}:5173`);
+      networkInterfaces[interfaceName].forEach(netInterface => {
+        if (netInterface.family === 'IPv4' && !netInterface.internal) {
+          networkIPs.push(`http://${netInterface.address}:3000`);
+          networkIPs.push(`http://${netInterface.address}:5173`);
         }
       });
     });
