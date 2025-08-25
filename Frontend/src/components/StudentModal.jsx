@@ -60,18 +60,15 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     
     try {
       setLoadingRegistrations(true)
-      console.log('Fetching registrations for student:', student.id)
       const response = await studentsAPI.getRegistrations(student.id)
-      console.log('Registration response:', response.data)
       
-      // Handle both old and new response formats
       const registrations = Array.isArray(response.data?.data) ? response.data.data : 
                            Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
-      console.log('Set registrations:', registrations)
     } catch (error) {
-      console.error('Error fetching student registrations:', error)
-      // Don't show error for empty registrations
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Error fetching student registrations:', error);
+      }
       setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)
@@ -107,11 +104,14 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
           const createdStudent = studentResponse.data.student;
           for (const courseId of selectedCourses) {
             try {
-              // We need to create a user account first for the student to register
-              // For now, we'll skip auto-enrollment and let admin manually enroll
-              console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
+              // Note: Auto-enrollment requires user account creation
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`Would enroll student ${createdStudent.id} in course ${courseId}`);
+              }
             } catch (error) {
-              console.error(`Failed to enroll in course ${courseId}:`, error)
+              if (process.env.NODE_ENV === 'development') {
+                console.error(`Failed to enroll in course ${courseId}:`, error);
+              }
             }
           }
         }
@@ -130,7 +130,9 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error)
+     if (process.env.NODE_ENV === 'development') {
+       console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error);
+     }
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         `Failed to ${mode === 'create' ? 'create' : 'update'} student. Please try again.`

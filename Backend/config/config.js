@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 import os from 'os';
 
+// Load environment variables
+dotenv.config();
+
 // Get network IP
 const getNetworkIP = () => {
   const networkInterfaces = os.networkInterfaces();
@@ -15,9 +18,6 @@ const getNetworkIP = () => {
   return 'localhost';
 };
 
-// Load environment variables
-dotenv.config();
-
 const networkIP = getNetworkIP();
 
 export const config = {
@@ -27,6 +27,7 @@ export const config = {
   DB_NAME: process.env.DB_NAME || 'student_registration',
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || 'your_password',
+  DATABASE_URL: process.env.DATABASE_URL || 'local',
 
   // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_make_it_long_and_secure_12345',
@@ -39,7 +40,7 @@ export const config = {
   // Frontend URL
   CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
   
-  // Additional allowed origins for CORS
+  // CORS Configuration
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? 
     process.env.ALLOWED_ORIGINS.split(',') : 
     [
@@ -51,14 +52,11 @@ export const config = {
       `http://${networkIP}:5173`
     ],
 
-  // Database URL (for SQLite)
-  DATABASE_URL: process.env.DATABASE_URL || 'local',
-
   // Default Admin User Configuration
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@example.com',
   ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'admin123',
   ADMIN_FIRST_NAME: process.env.ADMIN_FIRST_NAME || 'System',
   ADMIN_LAST_NAME: process.env.ADMIN_LAST_NAME || 'Administrator'
-}
+};
 
-export default config
+export default config;

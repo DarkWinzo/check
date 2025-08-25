@@ -3,9 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import os from 'os';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import config from './config/config.js';
 
 // Import routes
@@ -17,9 +14,6 @@ import registrationRoutes from './routes/registrations.js';
 // Import database
 import { initializeDatabase } from './config/database.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 const app = express();
 const PORT = config.PORT || 5000;
 
@@ -27,43 +21,14 @@ const PORT = config.PORT || 5000;
 app.use(helmet());
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    // Get current network interfaces to allow network host access
-    const networkInterfaces = os.networkInterfaces();
-    const networkIPs = [];
-    
-    Object.keys(networkInterfaces).forEach(interfaceName => {
-      networkInterfaces[interfaceName].forEach(netInterface => {
-        if (netInterface.family === 'IPv4' && !netInterface.internal) {
-          networkIPs.push(`http://${netInterface.address}:3000`);
-          networkIPs.push(`http://${netInterface.address}:5173`);
-        }
-      });
-    });
-    
-    const allowedOrigins = [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173',
-      config.CLIENT_URL,
-      ...networkIPs
-    ].filter(Boolean);
-    
-    console.log('CORS Request from:', origin);
-    console.log('Allowed origins:', allowedOrigins);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (config.ALLOWED_ORIGINS.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      // In development, allow all origins for easier testing
       if (process.env.NODE_ENV === 'development') {
-        console.log('Development mode: allowing origin:', origin);
         callback(null, true);
       } else {
-        console.log('CORS blocked origin:', origin);
         callback(new Error('Not allowed by CORS'));
       }
     }
@@ -76,12 +41,12 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100
 });
 app.use(limiter);
 
 // Logging
-app.use(morgan('combined'));
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -116,14 +81,15 @@ app.use('*', (req, res) => {
 async function startServer() {
   try {
     await initializeDatabase();
-    console.log('Database initialized successfully');
+    console.log('✅ Database initialized successfully');
     
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV}`);
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📦 Environment: ${process.env.NODE_ENV}`);
+      console.log(`🌐 API URL: http://localhost:${PORT}/api`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('❌ Failed to start server:', error);
     process.exit(1);
   }
 }

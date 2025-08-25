@@ -82,6 +82,7 @@ const Students = () => {
       setDeleteLoading(prev => ({ ...prev, [student.id]: false }))
     }
   }
+
   const handleModalClose = () => {
     setShowModal(false)
     setSelectedStudent(null)
@@ -93,7 +94,6 @@ const Students = () => {
     fetchStudents()
   }
 
-  // Show access denied only for non-admin users
   if (user?.role !== 'admin' && user?.role !== 'student') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">

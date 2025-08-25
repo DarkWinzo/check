@@ -27,21 +27,12 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      console.log('Checking auth status with token:', token ? 'present' : 'missing');
       const response = await authAPI.verify()
-      console.log('Auth verification successful:', response.data);
       setUser(response.data.user)
     } catch (error) {
-      console.error('Auth check failed:', error.message);
-      
-      // Only log detailed errors if it's not a network error
-      if (error.response) {
-        console.error('Error details:', {
-          status: error.response?.status,
-          data: error.response?.data
-        });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Auth check failed:', error.message);
       }
-      
       localStorage.removeItem('token')
     } finally {
       setLoading(false)
@@ -50,10 +41,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      console.log('Attempting login with:', email)
-      console.log('API Base URL:', import.meta.env.VITE_API_URL || 'default');
       const response = await authAPI.login(email, password)
-      console.log('Login response:', response.data)
       const { token, user } = response.data
       
       localStorage.setItem('token', token)
@@ -61,15 +49,13 @@ export const AuthProvider = ({ children }) => {
       
       return { success: true }
     } catch (error) {
-      console.error('Login error details:', {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Login error:', error.message);
+      }
       return { 
         success: false, 
         error: error.response?.data?.message || 
-               (error.code === 'ERR_NETWORK' || !error.response) ? 'Cannot connect to server. Please check if the backend is running on port 5000.' :
+               (!error.response) ? 'Cannot connect to server. Please check if the backend is running.' :
                'Login failed. Please try again.' 
       }
     }

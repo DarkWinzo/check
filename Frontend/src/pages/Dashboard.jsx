@@ -81,25 +81,23 @@ const Dashboard = () => {
     return () => clearInterval(timer)
   }, [])
 
-  // Add error handling for dashboard data fetching
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('Fetching dashboard data for user role:', user?.role);
       
       if (user?.role === 'admin') {
         try {
           const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
             studentsAPI.getAll({ limit: 100 }).catch((error) => {
-              console.error('Error fetching students:', error);
+              if (process.env.NODE_ENV === 'development') console.error('Error fetching students:', error);
               return { data: { pagination: { totalCount: 0 }, students: [] } };
             }),
             coursesAPI.getAll({ limit: 100 }).catch((error) => {
-              console.error('Error fetching courses:', error);
+              if (process.env.NODE_ENV === 'development') console.error('Error fetching courses:', error);
               return { data: { pagination: { totalCount: 0 }, courses: [] } };
             }),
             registrationsAPI.getAll({ limit: 10 }).catch((error) => {
-              console.error('Error fetching registrations:', error);
+              if (process.env.NODE_ENV === 'development') console.error('Error fetching registrations:', error);
               return { data: { pagination: { totalCount: 0 }, registrations: [] } };
             })
           ])
@@ -113,8 +111,7 @@ const Dashboard = () => {
 
           setRecentActivity(registrationsRes.data.registrations?.slice(0, 5) || [])
         } catch (error) {
-          console.error('Error fetching admin data:', error)
-          // Set default values for admin
+          if (process.env.NODE_ENV === 'development') console.error('Error fetching admin data:', error);
           setStats({
             totalStudents: 0,
             totalCourses: 0,
@@ -124,10 +121,9 @@ const Dashboard = () => {
           setRecentActivity([])
         }
       } else {
-        // For students, fetch their own data
         try {
           const coursesRes = await coursesAPI.getAll({ limit: 20 }).catch((error) => {
-            console.error('Error fetching courses for student:', error);
+            if (process.env.NODE_ENV === 'development') console.error('Error fetching courses for student:', error);
             return { data: { pagination: { totalCount: 0 }, courses: [] } };
           })
           setStats({
@@ -135,8 +131,7 @@ const Dashboard = () => {
             availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0
           })
         } catch (error) {
-          console.error('Error fetching student data:', error)
-          // Set default values for students
+          if (process.env.NODE_ENV === 'development') console.error('Error fetching student data:', error);
           setStats({
             totalCourses: 0,
             availableCourses: 0
@@ -145,8 +140,7 @@ const Dashboard = () => {
       }
       setDataLoaded(true)
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
-      // Set default stats on error
+      if (process.env.NODE_ENV === 'development') console.error('Error fetching dashboard data:', error);
       setStats({
         totalStudents: 0,
         totalCourses: 0,

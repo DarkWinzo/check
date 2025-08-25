@@ -1,44 +1,18 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import os from 'os'
-
-// Get network IP for development
-const getNetworkIP = () => {
-  const networkInterfaces = os.networkInterfaces();
-  
-  for (const interfaceName of Object.keys(networkInterfaces)) {
-    for (const networkInterface of networkInterfaces[interfaceName]) {
-      if (networkInterface.family === 'IPv4' && !networkInterface.internal) {
-        return networkInterface.address;
-      }
-    }
-  }
-  return 'localhost';
-};
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
   server: {
     port: 3000,
-    host: '0.0.0.0', // Allow external connections
-    strictPort: true, // Don't try other ports if 3000 is busy
+    host: '0.0.0.0',
+    strictPort: true,
     proxy: mode === 'development' ? {
       '/api': {
-        target: `http://${getNetworkIP()}:5000`,
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('Proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending Request to the Target:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes, req, _res) => {
-            console.log('Received Response from the Target:', proxyRes.statusCode, req.url);
-          });
-        }
+        ws: true
       }
     } : undefined
   },
