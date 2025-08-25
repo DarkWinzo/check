@@ -11,10 +11,26 @@ import {
   GraduationCap,
   Sparkles,
   Search,
-  Filter
+  Filter,
+  BarChart3,
+  PieChart,
+  Calendar,
+  Award,
+  Target,
+  Eye,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  Star,
+  UserCheck,
+  BookMarked,
+  TrendingDown
 } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts'
 import LoadingSpinner from '../components/LoadingSpinner'
+import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -22,12 +38,18 @@ const Dashboard = () => {
     totalStudents: 0,
     totalCourses: 0,
     studentsPerCourse: 0,
-    totalRegistrations: 0
+    totalRegistrations: 0,
+    activeStudents: 0,
+    completedCourses: 0,
+    pendingRegistrations: 0,
+    averageGrade: 0
   })
   const [chartData, setChartData] = useState({
     enrollmentByMonth: [],
     coursePopularity: [],
-    statusDistribution: []
+    statusDistribution: [],
+    enrollmentTrend: [],
+    departmentStats: []
   })
   const [students, setStudents] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -36,6 +58,11 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const [studentsLoading, setStudentsLoading] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const [refreshing, setRefreshing] = useState(false)
+  const [error, setError] = useState(null)
+  const [selectedChart, setSelectedChart] = useState('enrollment')
+  const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
+  const [analyticsType, setAnalyticsType] = useState('')
 
   useEffect(() => {
     fetchDashboardData()
@@ -52,42 +79,76 @@ const Dashboard = () => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
+      setError(null)
       
       if (user?.role === 'admin') {
         const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-          studentsAPI.getAll({ limit: 1000 }),
-          coursesAPI.getAll({ limit: 1000 }),
-          registrationsAPI.getAll({ limit: 1000 })
+          studentsAPI.getAll({ limit: 1000 }).catch(err => {
+            console.error('Students API Error:', err)
+            toast.error('Failed to fetch students data')
+            return { data: { students: [], pagination: { totalCount: 0 } } }
+          }),
+          coursesAPI.getAll({ limit: 1000 }).catch(err => {
+            console.error('Courses API Error:', err)
+            toast.error('Failed to fetch courses data')
+            return { data: { courses: [], pagination: { totalCount: 0 } } }
+          }),
+          registrationsAPI.getAll({ limit: 1000 }).catch(err => {
+            console.error('Registrations API Error:', err)
+            toast.error('Failed to fetch registrations data')
+            return { data: { registrations: [], pagination: { totalCount: 0 } } }
+          })
         ])
 
-        const totalStudents = studentsRes.data.pagination.totalCount
-        const totalCourses = coursesRes.data.pagination.totalCount
-        const totalRegistrations = registrationsRes.data.pagination.totalCount
+        const totalStudents = studentsRes.data.pagination?.totalCount || 0
+        const totalCourses = coursesRes.data.pagination?.totalCount || 0
+        const totalRegistrations = registrationsRes.data.pagination?.totalCount || 0
+        const activeStudents = studentsRes.data.students?.filter(s => s.status === 'active').length || 0
         
-        // Calculate average students per course
+        // Calculate average students per course with error handling
         const studentsPerCourse = totalCourses > 0 ? Math.round((totalRegistrations / totalCourses) * 10) / 10 : 0
+
+        // Calculate additional stats
+        const completedCourses = registrationsRes.data.registrations?.filter(r => r.status === 'completed').length || 0
+        const pendingRegistrations = registrationsRes.data.registrations?.filter(r => r.status === 'pending').length || 0
 
         setStats({
           totalStudents,
           totalCourses,
           studentsPerCourse,
-          totalRegistrations
+          totalRegistrations,
+          activeStudents,
+          completedCourses,
+          pendingRegistrations,
+          averageGrade: 85.5 // Mock data for now
         })
 
-        // Prepare chart data
-        prepareChartData(studentsRes.data.students, coursesRes.data.courses, registrationsRes.data.registrations)
+        // Prepare chart data with error handling
+        if (studentsRes.data.students && coursesRes.data.courses && registrationsRes.data.registrations) {
+          prepareChartData(studentsRes.data.students, coursesRes.data.courses, registrationsRes.data.registrations)
+        }
       } else {
         // For students, show limited stats
-        const coursesRes = await coursesAPI.getAll({ limit: 20 })
-        setStats({
-          totalCourses: coursesRes.data.pagination.totalCount,
-          studentsPerCourse: 0,
-          totalStudents: 0,
-          totalRegistrations: 0
-        })
+        try {
+          const coursesRes = await coursesAPI.getAll({ limit: 20 })
+          setStats({
+            totalCourses: coursesRes.data.pagination?.totalCount || 0,
+            availableCourses: coursesRes.data.courses?.filter(c => c.status === 'active').length || 0,
+            myRegistrations: 0, // TODO: Fetch student's own registrations
+            completedCourses: 0,
+            totalStudents: 0,
+            totalRegistrations: 0,
+            studentsPerCourse: 0
+          })
+        } catch (error) {
+          console.error('Error fetching student dashboard data:', error)
+          toast.error('Failed to load dashboard data')
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
+      setError('Failed to load dashboard data. Please try refreshing.')
+      toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
@@ -105,72 +166,114 @@ const Dashboard = () => {
       }
 
       const response = await studentsAPI.getAll(params)
-      setStudents(response.data.students)
-      setPagination(response.data.pagination)
+      setStudents(response.data.students || [])
+      setPagination(response.data.pagination || {})
     } catch (error) {
       console.error('Error fetching students:', error)
+      toast.error('Failed to fetch students')
+      setStudents([])
+      setPagination({})
     } finally {
       setStudentsLoading(false)
     }
   }
 
   const prepareChartData = (students, courses, registrations) => {
-    // Enrollment by month (last 6 months)
-    const monthlyData = []
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      const monthName = date.toLocaleDateString('en-US', { month: 'short' })
-      const monthYear = date.toISOString().slice(0, 7)
-      
-      const enrollments = registrations.filter(reg => 
-        reg.registration_date.startsWith(monthYear)
-      ).length
-      
-      monthlyData.push({
-        month: monthName,
-        enrollments
-      })
-    }
-
-    // Course popularity (top 5 courses by enrollment)
-    const courseEnrollments = {}
-    registrations.forEach(reg => {
-      const courseId = reg.course_id
-      const course = courses.find(c => c.id === courseId)
-      if (course) {
-        const courseName = course.course_name.length > 20 
-          ? course.course_name.substring(0, 20) + '...' 
-          : course.course_name
-        courseEnrollments[courseName] = (courseEnrollments[courseName] || 0) + 1
+    try {
+      // Enrollment by month (last 6 months)
+      const monthlyData = []
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date()
+        date.setMonth(date.getMonth() - i)
+        const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+        const monthYear = date.toISOString().slice(0, 7)
+        
+        const enrollments = registrations.filter(reg => 
+          reg.registration_date && reg.registration_date.startsWith(monthYear)
+        ).length
+        
+        monthlyData.push({
+          month: monthName,
+          enrollments,
+          students: Math.floor(enrollments * 0.8) // Mock active students
+        })
       }
-    })
 
-    const coursePopularity = Object.entries(courseEnrollments)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 5)
-      .map(([name, count]) => ({ name, students: count }))
+      // Course popularity (top 5 courses by enrollment)
+      const courseEnrollments = {}
+      registrations.forEach(reg => {
+        const courseId = reg.course_id
+        const course = courses.find(c => c.id === courseId)
+        if (course) {
+          const courseName = course.course_name.length > 20 
+            ? course.course_name.substring(0, 20) + '...' 
+            : course.course_name
+          courseEnrollments[courseName] = (courseEnrollments[courseName] || 0) + 1
+        }
+      })
 
-    // Status distribution
-    const statusCounts = students.reduce((acc, student) => {
-      acc[student.status] = (acc[student.status] || 0) + 1
-      return acc
-    }, {})
+      const coursePopularity = Object.entries(courseEnrollments)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 5)
+        .map(([name, count]) => ({ name, students: count, percentage: Math.round((count / registrations.length) * 100) }))
 
-    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
-      name: status.charAt(0).toUpperCase() + status.slice(1),
-      value: count
-    }))
+      // Status distribution
+      const statusCounts = students.reduce((acc, student) => {
+        const status = student.status || 'unknown'
+        acc[status] = (acc[status] || 0) + 1
+        return acc
+      }, {})
 
-    setChartData({
-      enrollmentByMonth: monthlyData,
-      coursePopularity,
-      statusDistribution
-    })
+      const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+        name: status.charAt(0).toUpperCase() + status.slice(1),
+        value: count,
+        percentage: Math.round((count / students.length) * 100)
+      }))
+
+      // Department statistics
+      const departmentStats = courses.reduce((acc, course) => {
+        const dept = course.department || 'Other'
+        if (!acc[dept]) {
+          acc[dept] = { name: dept, courses: 0, enrollments: 0 }
+        }
+        acc[dept].courses += 1
+        acc[dept].enrollments += registrations.filter(r => r.course_id === course.id).length
+        return acc
+      }, {})
+
+      setChartData({
+        enrollmentByMonth: monthlyData,
+        coursePopularity,
+        statusDistribution,
+        enrollmentTrend: monthlyData,
+        departmentStats: Object.values(departmentStats)
+      })
+    } catch (error) {
+      console.error('Error preparing chart data:', error)
+      toast.error('Failed to prepare analytics data')
+    }
   }
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, bgGradient }) => (
-    <div className={`relative overflow-hidden rounded-2xl ${bgGradient} p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group`}>
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await fetchDashboardData()
+    if (user?.role === 'admin') {
+      await fetchStudents()
+    }
+    setRefreshing(false)
+    toast.success('Dashboard refreshed successfully!')
+  }
+
+  const openAnalyticsModal = (type) => {
+    setAnalyticsType(type)
+    setShowAnalyticsModal(true)
+  }
+
+  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, bgGradient, onClick, subtitle }) => (
+    <div 
+      className={`relative overflow-hidden rounded-2xl ${bgGradient} p-6 shadow-xl hover:shadow-2xl transition-all duration-300 group ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="absolute top-0 right-0 w-32 h-32 opacity-10">
         <div className="absolute inset-0 bg-white rounded-full transform translate-x-8 -translate-y-8 group-hover:scale-110 transition-transform duration-500"></div>
       </div>
@@ -182,9 +285,9 @@ const Dashboard = () => {
           </div>
           {trend && (
             <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold ${
-              trend === 'up' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              trend === 'up' ? 'bg-green-100 text-green-800' : trend === 'down' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
             }`}>
-              {trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+              {trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : trend === 'down' ? <ArrowDownRight className="h-3 w-3" /> : <Activity className="h-3 w-3" />}
               <span>{trendValue}%</span>
             </div>
           )}
@@ -194,15 +297,193 @@ const Dashboard = () => {
           {loading ? <LoadingSpinner size="sm" /> : value}
         </div>
         <div className="text-white/80 text-sm font-medium">{title}</div>
+        {subtitle && (
+          <div className="text-white/60 text-xs mt-1">{subtitle}</div>
+        )}
       </div>
       
       <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20">
-        <div className="h-full bg-white/40 rounded-full" style={{ width: '70%' }}></div>
+        <div className="h-full bg-white/40 rounded-full transition-all duration-1000" style={{ width: `${Math.min((value / 100) * 100, 100)}%` }}></div>
       </div>
+      
+      {onClick && (
+        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <ChevronRight className="h-5 w-5 text-white/80" />
+        </div>
+      )}
     </div>
   )
 
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6']
+  const AnalyticsModal = () => {
+    if (!showAnalyticsModal) return null
+
+    const getModalContent = () => {
+      switch (analyticsType) {
+        case 'enrollment':
+          return {
+            title: 'Enrollment Trend Analysis',
+            icon: TrendingUp,
+            content: (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">Monthly Enrollment Trend</h4>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={chartData.enrollmentByMonth}>
+                      <defs>
+                        <linearGradient id="colorEnrollments" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="month" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="enrollments" stroke="#3B82F6" fillOpacity={1} fill="url(#colorEnrollments)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="text-2xl font-bold text-blue-600">{stats.totalRegistrations}</div>
+                    <div className="text-sm text-gray-600">Total Enrollments</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="text-2xl font-bold text-green-600">{stats.studentsPerCourse}</div>
+                    <div className="text-sm text-gray-600">Avg per Course</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 border border-gray-200">
+                    <div className="text-2xl font-bold text-purple-600">85%</div>
+                    <div className="text-sm text-gray-600">Success Rate</div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        case 'status':
+          return {
+            title: 'Student Status Distribution',
+            icon: PieChart,
+            content: (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">Status Breakdown</h4>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <RechartsPieChart>
+                      <Pie
+                        data={chartData.statusDistribution}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percentage }) => `${name} ${percentage}%`}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {chartData.statusDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {chartData.statusDistribution.map((status, index) => (
+                    <div key={status.name} className="bg-white rounded-xl p-4 border border-gray-200">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className="w-4 h-4 rounded-full" 
+                          style={{ backgroundColor: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'][index % 5] }}
+                        ></div>
+                        <div>
+                          <div className="text-lg font-bold text-gray-900">{status.value}</div>
+                          <div className="text-sm text-gray-600">{status.name}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        case 'courses':
+          return {
+            title: 'Most Popular Courses',
+            icon: BarChart3,
+            content: (
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6">
+                  <h4 className="text-lg font-bold text-gray-900 mb-4">Course Popularity Ranking</h4>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={chartData.coursePopularity} layout="horizontal">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" />
+                      <YAxis dataKey="name" type="category" width={120} />
+                      <Tooltip />
+                      <Bar dataKey="students" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-3">
+                  {chartData.coursePopularity.map((course, index) => (
+                    <div key={course.name} className="bg-white rounded-xl p-4 border border-gray-200 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                          <span className="text-sm font-bold text-purple-600">#{index + 1}</span>
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900">{course.name}</div>
+                          <div className="text-sm text-gray-600">{course.students} students enrolled</div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-purple-600">{course.percentage || 0}%</div>
+                        <div className="text-xs text-gray-500">of total</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          }
+        default:
+          return { title: 'Analytics', icon: BarChart3, content: <div>No data available</div> }
+      }
+    }
+
+    const modalContent = getModalContent()
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowAnalyticsModal(false)}
+          />
+          <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg">
+                  <modalContent.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">{modalContent.title}</h3>
+              </div>
+              <button
+                onClick={() => setShowAnalyticsModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              {modalContent.content}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading && Object.values(stats).every(val => val === 0)) {
     return (
@@ -213,6 +494,28 @@ const Dashboard = () => {
           </div>
           <LoadingSpinner size="lg" />
           <p className="mt-4 text-gray-600 font-medium">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-100">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-xl border border-red-200">
+          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+            <AlertCircle className="h-8 w-8 text-red-600" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard Error</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={handleRefresh}
+            className="btn btn-primary flex items-center space-x-2 mx-auto"
+            disabled={refreshing}
+          >
+            {refreshing ? <LoadingSpinner size="sm" /> : <RefreshCw className="h-4 w-4" />}
+            <span>Retry</span>
+          </button>
         </div>
       </div>
     )
@@ -248,13 +551,21 @@ const Dashboard = () => {
               </div>
               <p className="text-white/90 text-lg max-w-2xl leading-relaxed">
                 {user?.role === 'admin' 
-                  ? 'Monitor your institution\'s performance and manage student registrations.'
+                  ? 'Monitor your institution\'s performance with advanced analytics and insights.'
                   : 'Explore courses, track your progress, and manage your academic journey.'
                 }
               </p>
             </div>
             
-            <div className="text-right">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="bg-white/20 backdrop-blur-sm rounded-2xl p-3 border border-white/30 hover:bg-white/30 transition-all duration-200"
+                title="Refresh Dashboard"
+              >
+                <RefreshCw className={`h-5 w-5 text-white ${refreshing ? 'animate-spin' : ''}`} />
+              </button>
               <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-6 border border-white/30">
                 <div className="text-2xl font-bold mb-1">
                   {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -284,6 +595,7 @@ const Dashboard = () => {
               trendValue="12"
               color="bg-gradient-to-r from-blue-500 to-blue-600"
               bgGradient="bg-gradient-to-br from-blue-500 to-blue-600"
+              subtitle={`${stats.activeStudents} active`}
             />
             <StatCard
               title="Total Courses"
@@ -293,6 +605,7 @@ const Dashboard = () => {
               trendValue="8"
               color="bg-gradient-to-r from-green-500 to-green-600"
               bgGradient="bg-gradient-to-br from-green-500 to-green-600"
+              subtitle="Available for enrollment"
             />
             <StatCard
               title="Students per Course"
@@ -302,6 +615,7 @@ const Dashboard = () => {
               trendValue="5"
               color="bg-gradient-to-r from-purple-500 to-purple-600"
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
+              subtitle="Average enrollment"
             />
             <StatCard
               title="Total Registrations"
@@ -311,6 +625,7 @@ const Dashboard = () => {
               trendValue="15"
               color="bg-gradient-to-r from-orange-500 to-orange-600"
               bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
+              subtitle={`${stats.completedCourses} completed`}
             />
           </>
         ) : (
@@ -324,22 +639,22 @@ const Dashboard = () => {
             />
             <StatCard
               title="My Registrations"
-              value="0"
+              value={stats.myRegistrations || 0}
               icon={Users}
               color="bg-gradient-to-r from-green-500 to-green-600"
               bgGradient="bg-gradient-to-br from-green-500 to-green-600"
             />
             <StatCard
               title="Completed Courses"
-              value="0"
-              icon={TrendingUp}
+              value={stats.completedCourses || 0}
+              icon={Award}
               color="bg-gradient-to-r from-purple-500 to-purple-600"
               bgGradient="bg-gradient-to-br from-purple-500 to-purple-600"
             />
             <StatCard
               title="Current Semester"
               value="Fall 2025"
-              icon={Activity}
+              icon={Calendar}
               color="bg-gradient-to-r from-orange-500 to-orange-600"
               bgGradient="bg-gradient-to-br from-orange-500 to-orange-600"
             />
@@ -347,61 +662,49 @@ const Dashboard = () => {
         )}
       </div>
 
+      {/* Analytics Cards for Admin */}
       {user?.role === 'admin' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Charts Section */}
-          <div className="space-y-6">
-            {/* Enrollment Trend Chart */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Enrollment Trend (Last 6 Months)</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={chartData.enrollmentByMonth}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="enrollments" stroke="#3B82F6" strokeWidth={3} />
-                </LineChart>
-              </ResponsiveContainer>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div 
+            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            onClick={() => openAnalyticsModal('enrollment')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <TrendingUp className="h-6 w-6" />
+              </div>
+              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             </div>
-
-            {/* Student Status Distribution */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Student Status Distribution</h3>
-              <ResponsiveContainer width="100%" height={250}>
-                <PieChart>
-                  <Pie
-                    data={chartData.statusDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {chartData.statusDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
+            <h3 className="text-lg font-bold mb-2">Enrollment Trend</h3>
+            <p className="text-white/80 text-sm">View detailed enrollment analytics and trends over time</p>
           </div>
 
-          {/* Course Popularity Chart */}
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Most Popular Courses</h3>
-            <ResponsiveContainer width="100%" height={520}>
-              <BarChart data={chartData.coursePopularity} layout="horizontal">
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={120} />
-                <Tooltip />
-                <Bar dataKey="students" fill="#10B981" />
-              </BarChart>
-            </ResponsiveContainer>
+          <div 
+            className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            onClick={() => openAnalyticsModal('status')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <PieChart className="h-6 w-6" />
+              </div>
+              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Student Status</h3>
+            <p className="text-white/80 text-sm">Analyze student status distribution and engagement</p>
+          </div>
+
+          <div 
+            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer group"
+            onClick={() => openAnalyticsModal('courses')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-xl">
+                <BarChart3 className="h-6 w-6" />
+              </div>
+              <ChevronRight className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            </div>
+            <h3 className="text-lg font-bold mb-2">Popular Courses</h3>
+            <p className="text-white/80 text-sm">Discover which courses are most in demand</p>
           </div>
         </div>
       )}
@@ -468,7 +771,7 @@ const Dashboard = () => {
                       {student.status}
                     </span>
                     <div className="text-xs text-gray-500 mt-1">
-                      {new Date(student.enrollment_date).toLocaleDateString()}
+                      {new Date(student.enrollment_date || student.created_at).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -536,6 +839,9 @@ const Dashboard = () => {
           </p>
         </div>
       )}
+
+      {/* Analytics Modal */}
+      <AnalyticsModal />
     </div>
   )
 }
