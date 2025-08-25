@@ -106,6 +106,7 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req, res) => {
         required: true
       });
     }
+    
     const { count, rows } = await Student.findAndCountAll({
       where: whereClause,
       include: includeOptions,
@@ -130,7 +131,10 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching students:', error);
-    res.status(500).json({ message: 'Server error fetching students' });
+    res.status(500).json({ 
+      message: 'Server error fetching students',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

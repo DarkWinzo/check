@@ -33,11 +33,16 @@ const Students = () => {
       }
 
       const response = await studentsAPI.getAll(params)
-      setStudents(response.data.students)
-      setPagination(response.data.pagination)
+      setStudents(response.data.students || [])
+      setPagination(response.data.pagination || {})
     } catch (error) {
       console.error('Error fetching students:', error)
-      toast.error('Failed to fetch students')
+      const message = error.response?.data?.message || 
+        error.response?.data?.error || 
+        'Failed to fetch students. Please check your connection and try again.'
+      toast.error(message)
+      setStudents([])
+      setPagination({})
     } finally {
       setLoading(false)
     }

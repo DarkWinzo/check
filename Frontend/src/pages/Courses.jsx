@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { coursesAPI, registrationsAPI } from '../services/api'
-import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2 } from 'lucide-react'
+import { coursesAPI, registrationsAPI, studentsAPI } from '../services/api'
+import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2, UserCheck, Mail, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CourseModal from '../components/CourseModal'
@@ -19,6 +19,9 @@ const Courses = () => {
   const [showModal, setShowModal] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
   const [modalMode, setModalMode] = useState('create') // 'create', 'edit', 'view'
+  const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
+  const [enrolledStudents, setEnrolledStudents] = useState([])
+  const [enrollmentLoading, setEnrollmentLoading] = useState(false)
 
   useEffect(() => {
     fetchCourses()
@@ -36,11 +39,14 @@ const Courses = () => {
       }
 
       const response = await coursesAPI.getAll(params)
-      setCourses(response.data.courses)
-      setPagination(response.data.pagination)
+      setCourses(response.data.courses || [])
+      setPagination(response.data.pagination || {})
     } catch (error) {
       console.error('Error fetching courses:', error)
-      toast.error('Failed to fetch courses')
+      const message = error.response?.data?.message || 'Failed to fetch courses. Please try again.'
+      toast.error(message)
+      setCourses([])
+      setPagination({})
     } finally {
       setLoading(false)
     }
@@ -56,7 +62,7 @@ const Courses = () => {
       // Refresh courses to update enrollment count
       fetchCourses()
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to register for course'
+      const message = error.response?.data?.message || 'Failed to register for course. Please try again.'
       toast.error(message)
     } finally {
       setRegistering(prev => ({ ...prev, [courseId]: false }))
@@ -92,12 +98,31 @@ const Courses = () => {
       toast.success('Course deleted successfully')
       fetchCourses()
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to delete course'
+      const message = error.response?.data?.message || 'Failed to delete course. Please try again.'
       toast.error(message)
     } finally {
       setDeleteLoading(prev => ({ ...prev, [course.id]: false }))
     }
   }
+
+  const handleViewEnrollments = async (course) => {
+    try {
+      setEnrollmentLoading(true)
+      setSelectedCourse(course)
+      setShowEnrollmentModal(true)
+      
+      const response = await coursesAPI.getRegistrations(course.id)
+      setEnrolledStudents(response.data || [])
+    } catch (error) {
+      console.error('Error fetching course enrollments:', error)
+      const message = error.response?.data?.message || 'Failed to fetch course enrollments'
+      toast.error(message)
+      setEnrolledStudents([])
+    } finally {
+      setEnrollmentLoading(false)
+    }
+  }
+
   const handleModalClose = () => {
     setShowModal(false)
     setSelectedCourse(null)
@@ -108,6 +133,134 @@ const Courses = () => {
     setSelectedCourse(null)
     fetchCourses()
   }
+
+  const EnrollmentModal = () => {
+    if (!showEnrollmentModal || !selectedCourse) return null
+
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+          <div 
+            className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
+            onClick={() => setShowEnrollmentModal(false)}
+          />
+          <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg">
+                  <UserCheck className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Course Enrollments</h3>
+                  <p className="text-sm text-gray-600">{selectedCourse.course_name} ({selectedCourse.course_code})</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowEnrollmentModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-blue-600">{enrolledStudents.length}</div>
+                  <div className="text-sm text-gray-600">Total Enrolled</div>
+                </div>
+                <div className="bg-green-50 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-green-600">{selectedCourse.max_students}</div>
+                  <div className="text-sm text-gray-600">Max Capacity</div>
+                </div>
+                <div className="bg-purple-50 rounded-xl p-4">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {selectedCourse.max_students - enrolledStudents.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Available Spots</div>
+                </div>
+              </div>
+
+              {/* Enrolled Students List */}
+              <div className="space-y-4">
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Enrolled Students</h4>
+                
+                {enrollmentLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <LoadingSpinner size="lg" />
+                  </div>
+                ) : enrolledStudents.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {enrolledStudents.map((registration) => (
+                      <div key={registration.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors duration-200">
+                        <div className="flex items-center space-x-4">
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center shadow-lg">
+                            <span className="text-sm font-bold text-white">
+                              {registration.Student?.first_name?.charAt(0)}{registration.Student?.last_name?.charAt(0)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900">
+                              {registration.Student?.first_name} {registration.Student?.last_name}
+                            </div>
+                            <div className="text-sm text-gray-500 flex items-center space-x-4">
+                              <span className="flex items-center">
+                                <Mail className="h-3 w-3 mr-1" />
+                                {registration.Student?.email}
+                              </span>
+                              <span className="font-mono text-xs bg-gray-200 px-2 py-1 rounded">
+                                ID: {registration.Student?.student_id}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
+                            registration.status === 'enrolled'
+                              ? 'bg-green-100 text-green-800'
+                              : registration.status === 'completed'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {registration.status}
+                          </span>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(registration.registration_date).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                      <UserCheck className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No Enrollments Yet</h3>
+                    <p className="text-gray-600">This course doesn't have any enrolled students yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <button
+                onClick={() => setShowEnrollmentModal(false)}
+                className="btn btn-outline"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const departments = [...new Set(courses.map(course => course.department).filter(Boolean))]
   const semesters = [...new Set(courses.map(course => course.semester).filter(Boolean))]
 
@@ -304,6 +457,14 @@ const Courses = () => {
                         View
                       </button>
                       <button 
+                        onClick={() => handleViewEnrollments(course)}
+                        className="btn btn-secondary text-sm py-2 px-3"
+                        title="View Enrollments"
+                      >
+                        <UserCheck className="h-4 w-4 mr-1" />
+                        Enrollments
+                      </button>
+                      <button 
                         onClick={() => handleEditCourse(course)}
                         className="btn btn-primary text-sm py-2 px-3"
                       >
@@ -422,6 +583,9 @@ const Courses = () => {
           mode={modalMode}
         />
       )}
+
+      {/* Enrollment Modal */}
+      <EnrollmentModal />
     </div>
   )
 }

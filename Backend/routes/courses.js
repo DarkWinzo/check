@@ -173,6 +173,11 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
       status
     } = req.body;
 
+    // Check if course exists first
+    const existingCourse = await Course.findByPk(id);
+    if (!existingCourse) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
     const updateData = {};
 
     if (courseName !== undefined) {
@@ -203,9 +208,6 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
       returning: true
     });
 
-    if (updatedRowsCount === 0) {
-      return res.status(404).json({ message: 'Course not found' });
-    }
 
     const updatedCourse = await Course.findByPk(id);
 
@@ -216,7 +218,10 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
 
   } catch (error) {
     console.error('Error updating course:', error);
-    res.status(500).json({ message: 'Server error updating course' });
+    res.status(500).json({ 
+      message: 'Server error updating course',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

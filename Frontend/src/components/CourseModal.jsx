@@ -57,7 +57,10 @@ const CourseModal = ({ isOpen, onClose, onSuccess, course, mode = 'create' }) =>
       }
       onSuccess()
     } catch (error) {
-      const message = error.response?.data?.message || `Failed to ${mode === 'create' ? 'create' : 'update'} course`
+      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} course:`, error)
+      const message = error.response?.data?.message || 
+        error.response?.data?.error || 
+        `Failed to ${mode === 'create' ? 'create' : 'update'} course. Please check your input and try again.`
       toast.error(message)
     } finally {
       setLoading(false)

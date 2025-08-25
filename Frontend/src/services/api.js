@@ -35,10 +35,29 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Enhanced error logging
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    })
+    
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       window.location.href = '/login'
     }
+    
+    // Add more specific error handling
+    if (error.response?.status >= 500) {
+      console.error('Server Error:', error.response.data)
+    } else if (error.response?.status >= 400) {
+      console.error('Client Error:', error.response.data)
+    } else if (error.code === 'NETWORK_ERROR') {
+      console.error('Network Error:', error.message)
+    }
+    
     return Promise.reject(error)
   }
 )
