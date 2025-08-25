@@ -74,11 +74,23 @@ router.post('/', authenticateToken, [
         status: 'enrolled'
       }, { transaction });
 
+      // Fetch the complete registration with course details
+      const completeRegistration = await Registration.findByPk(registration.id, {
+        include: [{
+          model: Course,
+          attributes: ['id', 'course_code', 'course_name', 'instructor', 'credits']
+        }, {
+          model: Student,
+          attributes: ['id', 'student_id', 'first_name', 'last_name', 'email']
+        }],
+        transaction
+      });
       await transaction.commit();
 
+      console.log('Registration created successfully:', completeRegistration.toJSON());
       res.status(201).json({
         message: 'Successfully registered for course',
-        registration
+        registration: completeRegistration
       });
 
     } catch (error) {

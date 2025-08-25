@@ -60,8 +60,14 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     
     try {
       setLoadingRegistrations(true)
+      console.log('Fetching registrations for student:', student.id)
       const response = await studentsAPI.getRegistrations(student.id)
-      setStudentRegistrations(response.data || [])
+      console.log('Registration response:', response.data)
+      
+      // Handle both old and new response formats
+      const registrations = response.data?.data || response.data || []
+      setStudentRegistrations(registrations)
+      console.log('Set registrations:', registrations)
     } catch (error) {
       console.error('Error fetching student registrations:', error)
       setStudentRegistrations([])
@@ -119,8 +125,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-      const message = error.response?.data?.message || `Failed to ${mode === 'create' ? 'create' : 'update'} student`
-      toast.error(message)
+      // Don't show error toast for empty registrations, just log it
+      console.warn('Could not fetch student registrations:', error.response?.data?.message || error.message)
     } finally {
       setLoading(false)
     }

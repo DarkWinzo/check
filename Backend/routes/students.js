@@ -265,31 +265,50 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Students can only view their own registrations
+    // For students, get their own registrations by user_id
+    let studentId = id;
     if (req.user.role === 'student') {
       const student = await Student.findOne({
-        where: { id, user_id: req.user.id }
+        where: { user_id: req.user.id }
       });
-
+      
       if (!student) {
-        return res.status(403).json({ message: 'Access denied' });
+        return res.status(404).json({ message: 'Student profile not found' });
+      }
+      studentId = student.id;
+    } else {
+      // For admins, verify the student exists
+      const student = await Student.findByPk(id);
+      if (!student) {
+        return res.status(404).json({ message: 'Student not found' });
       }
     }
 
     const registrations = await Registration.findAll({
-      where: { student_id: id },
+      where: { student_id: studentId },
       include: [{
         model: Course,
-        attributes: ['course_code', 'course_name', 'credits', 'instructor', 'department']
+        attributes: ['id', 'course_code', 'course_name', 'credits', 'instructor', 'department', 'description']
       }],
       order: [['registration_date', 'DESC']]
     });
 
-    res.json(registrations || []);
+    console.log(`Found ${registrations.length} registrations for student ${studentId}`);
+    
+    res.json({
+      success: true,
+      data: registrations || [],
+      count: registrations.length
+    });
 
   } catch (error) {
     console.error('Error fetching student registrations:', error);
-    res.status(500).json({ message: 'Server error fetching registrations', data: [] });
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error fetching registrations', 
+      data: [],
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 

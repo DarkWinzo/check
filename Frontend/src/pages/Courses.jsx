@@ -446,45 +446,47 @@ const Courses = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex space-x-2">
+                <div className="flex flex-wrap gap-2">
                   {user?.role === 'admin' ? (
                     <>
                       <button 
                         onClick={() => handleViewCourse(course)}
-                        className="flex-1 btn btn-outline text-sm py-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+                        className="flex-1 min-w-0 btn btn-outline text-sm py-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
                       >
                         <Eye className="h-4 w-4 mr-1" />
                         View
                       </button>
-                      <button 
-                        onClick={() => handleViewEnrollments(course)}
-                        className="btn btn-secondary text-sm py-2 px-3"
-                        title="View Enrollments"
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" />
-                        Enrollments
-                      </button>
-                      <button 
-                        onClick={() => handleEditCourse(course)}
-                        className="btn btn-primary text-sm py-2 px-3"
-                      >
-                        <Edit className="h-4 w-4 mr-1" />
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteCourse(course)}
-                        disabled={deleteLoading[course.id]}
-                        className="btn btn-outline text-red-600 hover:bg-red-50 hover:border-red-300 text-sm py-2 px-3 disabled:opacity-50"
-                      >
-                        {deleteLoading[course.id] ? (
-                          <LoadingSpinner size="sm" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </button>
+                      <div className="flex gap-1">
+                        <button 
+                          onClick={() => handleViewEnrollments(course)}
+                          className="btn btn-secondary text-sm py-2 px-3"
+                          title="View Enrollments"
+                        >
+                          <UserCheck className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleEditCourse(course)}
+                          className="btn btn-primary text-sm py-2 px-3"
+                          title="Edit Course"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteCourse(course)}
+                          disabled={deleteLoading[course.id]}
+                          className="btn btn-outline text-red-600 hover:bg-red-50 hover:border-red-300 text-sm py-2 px-3 disabled:opacity-50"
+                          title="Delete Course"
+                        >
+                          {deleteLoading[course.id] ? (
+                            <LoadingSpinner size="sm" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     </>
                   ) : user?.role === 'student' && (
-                    <div className="flex space-x-2">
+                    <div className="flex gap-2 w-full">
                       <button 
                         onClick={() => handleViewCourse(course)}
                         className="flex-1 btn btn-outline text-sm py-2 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
