@@ -20,7 +20,7 @@ echo
 
 # Start backend in background
 echo "Starting Backend Server..."
-cd Backend && npm start &
+cd Backend && export NODE_ENV=development && npm start &
 BACKEND_PID=$!
 
 # Wait a moment for backend to start

@@ -19,7 +19,7 @@ echo.
 
 REM Start backend
 echo Starting Backend Server...
-start "Backend Server" cmd /k "cd Backend && npm start"
+start "Backend Server" cmd /k "cd Backend && set NODE_ENV=development && npm start"
 
 REM Wait a moment for backend to start
 timeout /t 3 /nobreak > nul
