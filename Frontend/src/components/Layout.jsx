@@ -48,7 +48,6 @@ const Layout = ({ children }) => {
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
-  const [notificationLoading, setNotificationLoading] = useState(false)
   const [profileData, setProfileData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -61,7 +60,7 @@ const Layout = ({ children }) => {
   const [showNotifications, setShowNotifications] = useState(false)
 
   // Load notifications from localStorage on mount
-  useEffect(() => {
+  React.useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications')
     if (savedNotifications) {
       try {
@@ -73,7 +72,7 @@ const Layout = ({ children }) => {
   }, [])
 
   // Save notifications to localStorage when they change
-  useEffect(() => {
+  React.useEffect(() => {
     localStorage.setItem('notifications', JSON.stringify(notifications))
   }, [notifications])
 
@@ -91,7 +90,7 @@ const Layout = ({ children }) => {
   }
 
   // Simulate real notifications based on user actions
-  useEffect(() => {
+  React.useEffect(() => {
     const handleStorageChange = (e) => {
       if (e.key === 'lastAction') {
         const action = JSON.parse(e.newValue || '{}')
@@ -182,6 +181,7 @@ const Layout = ({ children }) => {
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
     return `${Math.floor(diffInMinutes / 1440)}d ago`
   }
+  
   const unreadCount = notifications.filter(n => n.unread).length
 
   const navigation = [

@@ -67,9 +67,6 @@ const Dashboard = () => {
   })
   const [selectedAnalytic, setSelectedAnalytic] = useState('enrollment')
   const [refreshing, setRefreshing] = useState(false)
-  const [realStudents, setRealStudents] = useState([])
-  const [realCourses, setRealCourses] = useState([])
-  const [realRegistrations, setRealRegistrations] = useState([])
 
   useEffect(() => {
     fetchDashboardData()
@@ -90,9 +87,6 @@ const Dashboard = () => {
       const courses = coursesRes.data.courses || []
       const registrations = registrationsRes.data.registrations || []
 
-      setRealStudents(students)
-      setRealCourses(courses)
-      setRealRegistrations(registrations)
 
       const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
 
@@ -269,7 +263,12 @@ const Dashboard = () => {
     <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-3">
-          <div className={`p-2 bg-gradient-to-r from-${color}-500 to-${color}-600 rounded-xl shadow-md`}>
+          <div className={`p-2 rounded-xl shadow-md ${
+            color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+            color === 'green' ? 'bg-gradient-to-r from-green-500 to-green-600' :
+            color === 'purple' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
+            'bg-gradient-to-r from-pink-500 to-pink-600'
+          }`}>
             <Icon className="h-5 w-5 text-white" />
           </div>
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -528,7 +527,10 @@ const Dashboard = () => {
                 onClick={() => setSelectedAnalytic(item.id)}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
                   selectedAnalytic === item.id
-                    ? `bg-gradient-to-r from-${item.color}-500 to-${item.color}-600 text-white shadow-lg`
+                    ? item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' :
+                      item.color === 'green' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' :
+                      item.color === 'purple' ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' :
+                      'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg'
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                 }`}
               >
