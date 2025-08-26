@@ -1,72 +1,105 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { body, validationResult } from 'express-validator';
 import { User } from '../config/database.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { validateLogin } from '../middleware/validation.js';
+import { asyncHandler } from '../middleware/errorHandler.js';
 import config from '../config/config.js';
 
 const router = express.Router();
 
-// Login user
-router.post('/login', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').exists()
-], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+router.post('/login', validateLogin, asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
 
-    const { email, password } = req.body;
+  const user = await User.findOne({ where: { email } });
 
-    // Find user
-    const user = await User.findOne({ where: { email } });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
-      config.JWT_SECRET,
-      { expiresIn: config.JWT_EXPIRES_IN }
-    );
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: { id: user.id, email: user.email, role: user.role }
+  if (!user) {
+    return res.status(401).json({ 
+      success: false,
+      message: 'Invalid credentials',
+      code: 'INVALID_CREDENTIALS'
     });
-
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
   }
-});
 
-// Get current user profile
-router.get('/profile', authenticateToken, async (req, res) => {
-  try {
-    res.json(req.user);
-
-  } catch (error) {
-    console.error('Profile error:', error);
-    res.status(500).json({ message: 'Server error fetching profile' });
+  if (!user.is_active) {
+    return res.status(401).json({ 
+      success: false,
+      message: 'Account is deactivated',
+      code: 'ACCOUNT_DEACTIVATED'
+    });
   }
-});
 
-// Verify token
-router.get('/verify', authenticateToken, (req, res) => {
-  res.json({ valid: true, user: req.user });
-});
+  if (user.locked_until && user.locked_until > new Date()) {
+    return res.status(401).json({ 
+      success: false,
+      message: 'Account is temporarily locked due to too many failed login attempts',
+      code: 'ACCOUNT_LOCKED',
+      locked_until: user.locked_until
+    });
+  }
+
+  const isValidPassword = await bcrypt.compare(password, user.password);
+  
+  if (!isValidPassword) {
+    const loginAttempts = user.login_attempts + 1;
+    const updateData = { login_attempts: loginAttempts };
+
+    if (loginAttempts >= config.MAX_LOGIN_ATTEMPTS) {
+      updateData.locked_until = new Date(Date.now() + config.LOCK_TIME);
+    }
+
+    await User.update(updateData, { where: { id: user.id } });
+
+    return res.status(401).json({ 
+      success: false,
+      message: 'Invalid credentials',
+      code: 'INVALID_CREDENTIALS',
+      attempts_remaining: Math.max(0, config.MAX_LOGIN_ATTEMPTS - loginAttempts)
+    });
+  }
+
+  await User.update({
+    login_attempts: 0,
+    locked_until: null,
+    last_login: new Date()
+  }, { where: { id: user.id } });
+
+  const token = jwt.sign(
+    { 
+      userId: user.id, 
+      email: user.email, 
+      role: user.role 
+    },
+    config.JWT_SECRET,
+    { expiresIn: config.JWT_EXPIRES_IN }
+  );
+
+  res.json({
+    success: true,
+    message: 'Login successful',
+    token,
+    user: { 
+      id: user.id, 
+      email: user.email, 
+      role: user.role 
+    }
+  });
+}));
+
+router.get('/profile', authenticateToken, asyncHandler(async (req, res) => {
+  res.json({
+    success: true,
+    user: req.user
+  });
+}));
+
+router.get('/verify', authenticateToken, asyncHandler(async (req, res) => {
+  res.json({ 
+    success: true,
+    valid: true, 
+    user: req.user 
+  });
+}));
 
 export default router;

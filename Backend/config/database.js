@@ -8,21 +8,33 @@ import config from './config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure database directory exists for SQLite
 const dbDir = join(__dirname, "../database/store");
 try {
     mkdirSync(dbDir, { recursive: true });
 } catch (error) {
-    // Directory already exists or other error
+    console.error('Database directory creation failed:', error.message);
 }
 
-// Database configuration
 const DATABASE_URL = config.DATABASE_URL;
 const DATABASE = DATABASE_URL === "local" ?
     new Sequelize({ 
         dialect: 'sqlite', 
         storage: join(dbDir, "local.db"), 
-        logging: config.NODE_ENV === 'development' ? console.log : false
+        logging: config.NODE_ENV === 'development' ? console.log : false,
+        pool: {
+            max: 10,
+            min: 2,
+            acquire: 30000,
+            idle: 10000
+        },
+        define: {
+            timestamps: true,
+            underscored: true,
+            freezeTableName: true
+        },
+        dialectOptions: {
+            busyTimeout: 30000
+        }
     }) :
     new Sequelize(DATABASE_URL, {
         dialect: 'postgres',
@@ -30,45 +42,103 @@ const DATABASE = DATABASE_URL === "local" ?
             ssl: config.NODE_ENV === 'production' ? {
                 require: true,
                 rejectUnauthorized: false
-            } : false
+            } : false,
+            connectTimeout: 60000,
+            socketTimeout: 60000
         },
         logging: config.NODE_ENV === 'development' ? console.log : false,
         pool: {
-            max: 5,
-            min: 0,
-            acquire: 30000,
-            idle: 10000
+            max: 25,
+            min: 5,
+            acquire: 60000,
+            idle: 10000,
+            evict: 1000
+        },
+        define: {
+            timestamps: true,
+            underscored: true,
+            freezeTableName: true
+        },
+        retry: {
+            max: 3
         }
     });
 
-// Define Models with clear table structures
-export const User = DATABASE.define('User', {
+export const User = DATABASE.define('users', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
     email: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false
+        type: DataTypes.STRING(255),
+        unique: {
+            name: 'unique_user_email',
+            msg: 'Email address already exists'
+        },
+        allowNull: false,
+        validate: {
+            isEmail: {
+                msg: 'Must be a valid email address'
+            },
+            len: {
+                args: [5, 255],
+                msg: 'Email must be between 5 and 255 characters'
+            }
+        }
     },
     password: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+            len: {
+                args: [6, 255],
+                msg: 'Password must be at least 6 characters'
+            }
+        }
     },
     role: {
-        type: DataTypes.STRING,
-        defaultValue: 'student'
+        type: DataTypes.ENUM('admin', 'student', 'instructor'),
+        defaultValue: 'student',
+        allowNull: false
+    },
+    is_active: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    last_login: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    login_attempts: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    },
+    locked_until: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
 }, {
-    tableName: 'users',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    indexes: [
+        { fields: ['email'] },
+        { fields: ['role'] },
+        { fields: ['is_active'] }
+    ],
+    hooks: {
+        beforeCreate: async (user) => {
+            if (user.password) {
+                user.password = await bcrypt.hash(user.password, 12);
+            }
+        },
+        beforeUpdate: async (user) => {
+            if (user.changed('password')) {
+                user.password = await bcrypt.hash(user.password, 12);
+            }
+        }
+    }
 });
 
-export const Student = DATABASE.define('Student', {
+export const Student = DATABASE.define('students', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -80,36 +150,82 @@ export const Student = DATABASE.define('Student', {
         references: {
             model: 'users',
             key: 'id'
-        }
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'SET NULL'
     },
     student_id: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false
+        type: DataTypes.STRING(50),
+        unique: {
+            name: 'unique_student_id',
+            msg: 'Student ID already exists'
+        },
+        allowNull: false,
+        validate: {
+            len: {
+                args: [3, 50],
+                msg: 'Student ID must be between 3 and 50 characters'
+            }
+        }
     },
     first_name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        validate: {
+            len: {
+                args: [1, 100],
+                msg: 'First name must be between 1 and 100 characters'
+            }
+        }
     },
     last_name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        validate: {
+            len: {
+                args: [1, 100],
+                msg: 'Last name must be between 1 and 100 characters'
+            }
+        }
     },
     email: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false
+        type: DataTypes.STRING(255),
+        unique: {
+            name: 'unique_student_email',
+            msg: 'Email address already exists'
+        },
+        allowNull: false,
+        validate: {
+            isEmail: {
+                msg: 'Must be a valid email address'
+            }
+        }
     },
     phone: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        validate: {
+            len: {
+                args: [0, 20],
+                msg: 'Phone number cannot exceed 20 characters'
+            }
+        }
     },
     date_of_birth: {
-        type: DataTypes.DATE,
-        allowNull: true
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+        validate: {
+            isDate: {
+                msg: 'Must be a valid date'
+            },
+            isBefore: {
+                args: new Date().toISOString().split('T')[0],
+                msg: 'Date of birth cannot be in the future'
+            }
+        }
     },
     gender: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM('male', 'female', 'other', 'prefer_not_to_say'),
         allowNull: true
     },
     address: {
@@ -118,78 +234,141 @@ export const Student = DATABASE.define('Student', {
     },
     enrollment_date: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
+        allowNull: false
     },
     status: {
-        type: DataTypes.STRING,
-        defaultValue: 'active'
+        type: DataTypes.ENUM('active', 'inactive', 'suspended', 'graduated'),
+        defaultValue: 'active',
+        allowNull: false
+    },
+    gpa: {
+        type: DataTypes.DECIMAL(3, 2),
+        allowNull: true,
+        validate: {
+            min: 0.00,
+            max: 4.00
+        }
     }
 }, {
-    tableName: 'students',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    indexes: [
+        { fields: ['student_id'] },
+        { fields: ['email'] },
+        { fields: ['status'] },
+        { fields: ['enrollment_date'] },
+        { fields: ['first_name', 'last_name'] }
+    ]
 });
 
-export const Course = DATABASE.define('Course', {
+export const Course = DATABASE.define('courses', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
     course_code: {
-        type: DataTypes.STRING,
-        unique: true,
-        allowNull: false
+        type: DataTypes.STRING(20),
+        unique: {
+            name: 'unique_course_code',
+            msg: 'Course code already exists'
+        },
+        allowNull: false,
+        validate: {
+            len: {
+                args: [2, 20],
+                msg: 'Course code must be between 2 and 20 characters'
+            }
+        }
     },
     course_name: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: DataTypes.STRING(255),
+        allowNull: false,
+        validate: {
+            len: {
+                args: [3, 255],
+                msg: 'Course name must be between 3 and 255 characters'
+            }
+        }
     },
     description: {
         type: DataTypes.TEXT,
         allowNull: true
     },
     duration: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: true
     },
     credits: {
         type: DataTypes.INTEGER,
-        defaultValue: 3
+        defaultValue: 3,
+        validate: {
+            min: 1,
+            max: 10
+        }
     },
     instructor: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(255),
         allowNull: true
     },
     department: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(100),
         allowNull: true
     },
     semester: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(50),
         allowNull: true
     },
     year: {
         type: DataTypes.INTEGER,
-        allowNull: true
+        allowNull: true,
+        validate: {
+            min: 2020,
+            max: 2030
+        }
     },
     max_students: {
         type: DataTypes.INTEGER,
-        defaultValue: 30
+        defaultValue: 30,
+        validate: {
+            min: 1,
+            max: 500
+        }
     },
     status: {
-        type: DataTypes.STRING,
-        defaultValue: 'active'
+        type: DataTypes.ENUM('active', 'inactive', 'archived'),
+        defaultValue: 'active',
+        allowNull: false
+    },
+    start_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    end_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    prerequisites: {
+        type: DataTypes.TEXT,
+        allowNull: true
     }
 }, {
-    tableName: 'courses',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    indexes: [
+        { fields: ['course_code'] },
+        { fields: ['status'] },
+        { fields: ['department'] },
+        { fields: ['semester', 'year'] },
+        { fields: ['instructor'] }
+    ],
+    validate: {
+        endDateAfterStartDate() {
+            if (this.start_date && this.end_date && this.start_date >= this.end_date) {
+                throw new Error('End date must be after start date');
+            }
+        }
+    }
 });
 
-export const Registration = DATABASE.define('Registration', {
+export const Registration = DATABASE.define('registrations', {
     id: {
         type: DataTypes.INTEGER,
         primaryKey: true,
@@ -201,7 +380,9 @@ export const Registration = DATABASE.define('Registration', {
         references: {
             model: 'students',
             key: 'id'
-        }
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
     },
     course_id: {
         type: DataTypes.INTEGER,
@@ -209,38 +390,83 @@ export const Registration = DATABASE.define('Registration', {
         references: {
             model: 'courses',
             key: 'id'
-        }
+        },
+        onUpdate: 'CASCADE',
+        onDelete: 'CASCADE'
     },
     registration_date: {
         type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
+        defaultValue: DataTypes.NOW,
+        allowNull: false
     },
     status: {
-        type: DataTypes.STRING,
-        defaultValue: 'enrolled'
+        type: DataTypes.ENUM('enrolled', 'completed', 'dropped', 'failed', 'withdrawn'),
+        defaultValue: 'enrolled',
+        allowNull: false
     },
     grade: {
-        type: DataTypes.STRING,
+        type: DataTypes.STRING(5),
+        allowNull: true,
+        validate: {
+            isIn: {
+                args: [['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F', 'I', 'W', 'P', 'NP']],
+                msg: 'Invalid grade format'
+            }
+        }
+    },
+    grade_points: {
+        type: DataTypes.DECIMAL(3, 2),
+        allowNull: true,
+        validate: {
+            min: 0.00,
+            max: 4.00
+        }
+    },
+    completion_date: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    notes: {
+        type: DataTypes.TEXT,
         allowNull: true
     }
 }, {
-    tableName: 'registrations',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    indexes: [
+        { fields: ['student_id'] },
+        { fields: ['course_id'] },
+        { fields: ['status'] },
+        { fields: ['registration_date'] },
+        { fields: ['student_id', 'course_id'], unique: true, name: 'unique_student_course' }
+    ]
 });
 
-// Define Associations
-User.hasOne(Student, { foreignKey: 'user_id', onDelete: 'SET NULL' });
-Student.belongsTo(User, { foreignKey: 'user_id' });
+User.hasOne(Student, { 
+    foreignKey: 'user_id', 
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE'
+});
+Student.belongsTo(User, { 
+    foreignKey: 'user_id' 
+});
 
-Student.hasMany(Registration, { foreignKey: 'student_id', onDelete: 'CASCADE' });
-Registration.belongsTo(Student, { foreignKey: 'student_id' });
+Student.hasMany(Registration, { 
+    foreignKey: 'student_id', 
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Registration.belongsTo(Student, { 
+    foreignKey: 'student_id' 
+});
 
-Course.hasMany(Registration, { foreignKey: 'course_id', onDelete: 'CASCADE' });
-Registration.belongsTo(Course, { foreignKey: 'course_id' });
+Course.hasMany(Registration, { 
+    foreignKey: 'course_id', 
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+});
+Registration.belongsTo(Course, { 
+    foreignKey: 'course_id' 
+});
 
-// Test database connection
 export async function testConnection() {
     try {
         await DATABASE.authenticate();
@@ -253,31 +479,26 @@ export async function testConnection() {
     }
 }
 
-// Initialize database
 export async function initializeDatabase() {
     try {
-        // Test connection first
         const connected = await testConnection();
         if (!connected) {
             throw new Error('Database connection failed');
         }
         
-        // Sync all models
-        await DATABASE.sync({ force: false, alter: false });
+        await DATABASE.sync({ 
+            force: false, 
+            alter: config.NODE_ENV === 'development' 
+        });
         
         const dbType = DATABASE_URL === "local" ? "SQLite (local.db)" : "PostgreSQL (cloud)";
         console.log(`✅ Database synchronized successfully using ${dbType}`);
         
-        // Create default admin user
         await createDefaultAdmin();
-        
-        // Create sample data for better experience
-        await createSampleData();
         
     } catch (error) {
         console.error('❌ Error initializing database:', error.message);
         
-        // If sync fails, try without alter
         try {
             console.log('🔄 Retrying database sync without alter...');
             await DATABASE.sync({ force: false });
@@ -290,23 +511,20 @@ export async function initializeDatabase() {
     }
 }
 
-// Create default admin user
 async function createDefaultAdmin() {
     try {
-        // Check if admin user already exists
         const existingAdmin = await User.findOne({
             where: { email: config.ADMIN_EMAIL }
         });
 
         if (!existingAdmin) {
-            // Hash the password
             const hashedPassword = await bcrypt.hash(config.ADMIN_PASSWORD, 12);
             
-            // Create admin user
             await User.create({
                 email: config.ADMIN_EMAIL,
                 password: hashedPassword,
-                role: 'admin'
+                role: 'admin',
+                is_active: true
             });
 
             console.log('✅ Default admin user created successfully!');
@@ -322,114 +540,8 @@ async function createDefaultAdmin() {
     }
 }
 
-// Create sample data for demonstration
-async function createSampleData() {
-    try {
-        // Create sample courses
-        const sampleCourses = [
-            {
-                course_code: 'CS101',
-                course_name: 'Introduction to Computer Science',
-                description: 'Fundamental concepts of computer science and programming.',
-                duration: '1 semester',
-                instructor: 'Dr. John Smith',
-                department: 'Computer Science',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 30,
-                credits: 3
-            },
-            {
-                course_code: 'MATH201',
-                course_name: 'Calculus II',
-                description: 'Advanced calculus concepts including integration and series.',
-                duration: '1 semester',
-                instructor: 'Dr. Sarah Johnson',
-                department: 'Mathematics',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 25,
-                credits: 4
-            },
-            {
-                course_code: 'PHYS101',
-                course_name: 'General Physics I',
-                description: 'Introduction to mechanics, waves, and thermodynamics.',
-                duration: '1 semester',
-                instructor: 'Dr. Michael Brown',
-                department: 'Physics',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 20,
-                credits: 4
-            }
-        ];
-
-        for (const courseData of sampleCourses) {
-            const existingCourse = await Course.findOne({
-                where: { course_code: courseData.course_code }
-            });
-            if (!existingCourse) {
-                await Course.create(courseData);
-            }
-        }
-
-        // Create sample students
-        const sampleStudents = [
-            {
-                student_id: 'STU001',
-                first_name: 'Alice',
-                last_name: 'Johnson',
-                email: 'alice.johnson@student.edu',
-                phone: '+1-555-0101',
-                date_of_birth: '2000-05-15',
-                gender: 'female',
-                address: '123 Main St, City, State 12345',
-                status: 'active'
-            },
-            {
-                student_id: 'STU002',
-                first_name: 'Bob',
-                last_name: 'Smith',
-                email: 'bob.smith@student.edu',
-                phone: '+1-555-0102',
-                date_of_birth: '1999-08-22',
-                gender: 'male',
-                address: '456 Oak Ave, City, State 12345',
-                status: 'active'
-            },
-            {
-                student_id: 'STU003',
-                first_name: 'Carol',
-                last_name: 'Davis',
-                email: 'carol.davis@student.edu',
-                phone: '+1-555-0103',
-                date_of_birth: '2001-02-10',
-                gender: 'female',
-                address: '789 Pine Rd, City, State 12345',
-                status: 'active'
-            }
-        ];
-
-        for (const studentData of sampleStudents) {
-            const existingStudent = await Student.findOne({
-                where: { student_id: studentData.student_id }
-            });
-            if (!existingStudent) {
-                await Student.create(studentData);
-            }
-        }
-
-        console.log('✅ Sample data created successfully!');
-    } catch (error) {
-        console.error('❌ Error creating sample data:', error.message);
-    }
-}
-
-// Export database instance
 export { DATABASE, DATABASE as db };
 
-// Export query function for compatibility with existing routes
 export async function query(sql, params = []) {
     try {
         const [results] = await DATABASE.query(sql, {
@@ -445,8 +557,13 @@ export async function query(sql, params = []) {
     }
 }
 
-// Graceful shutdown
 process.on('SIGINT', async () => {
+    console.log('🔄 Shutting down gracefully...');
+    await DATABASE.close();
+    process.exit(0);
+});
+
+process.on('SIGTERM', async () => {
     console.log('🔄 Shutting down gracefully...');
     await DATABASE.close();
     process.exit(0);
