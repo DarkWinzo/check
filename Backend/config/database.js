@@ -17,7 +17,7 @@ try {
 }
 
 // Database configuration
-const DATABASE_URL = config.DATABASE_URL || "local";
+const DATABASE_URL = config.DATABASE_URL;
 const DATABASE = DATABASE_URL === "local" ?
     new Sequelize({ 
         dialect: 'sqlite', 
@@ -27,7 +27,7 @@ const DATABASE = DATABASE_URL === "local" ?
     new Sequelize(DATABASE_URL, {
         dialect: 'postgres',
         dialectOptions: { 
-            ssl: process.env.NODE_ENV === 'production' ? {
+            ssl: config.NODE_ENV === 'production' ? {
                 require: true,
                 rejectUnauthorized: false
             } : false
