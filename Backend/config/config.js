@@ -27,7 +27,7 @@ export const config = {
   DB_NAME: process.env.DB_NAME || 'student_registration',
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || 'your_password',
-  DATABASE_URL: process.env.DATABASE_URL || 'local',
+  DATABASE_URL: process.env.DATABASE_URL || 'local', // 'local' for SQLite local.db, or PostgreSQL URL for cloud
 
   // JWT Configuration
   JWT_SECRET: process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_make_it_long_and_secure_12345',

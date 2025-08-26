@@ -8,7 +8,7 @@ import config from './config.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Ensure database directory exists
+// Ensure database directory exists for SQLite
 const dbDir = join(__dirname, "../database/store");
 try {
     mkdirSync(dbDir, { recursive: true });
@@ -21,21 +21,27 @@ const DATABASE_URL = config.DATABASE_URL || "local";
 const DATABASE = DATABASE_URL === "local" ?
     new Sequelize({ 
         dialect: 'sqlite', 
-        storage: join(dbDir, "student-registration.db"), 
-        logging: false 
+        storage: join(dbDir, "local.db"), 
+        logging: config.NODE_ENV === 'development' ? console.log : false
     }) :
     new Sequelize(DATABASE_URL, {
         dialect: 'postgres',
-        ssl: true,
-        protocol: 'postgres',
         dialectOptions: { 
-            native: true, 
-            ssl: { require: true, rejectUnauthorized: false } 
+            ssl: process.env.NODE_ENV === 'production' ? {
+                require: true,
+                rejectUnauthorized: false
+            } : false
         },
-        logging: false
+        logging: config.NODE_ENV === 'development' ? console.log : false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000
+        }
     });
 
-// Define Models
+// Define Models with clear table structures
 export const User = DATABASE.define('User', {
     id: {
         type: DataTypes.INTEGER,
@@ -56,6 +62,7 @@ export const User = DATABASE.define('User', {
         defaultValue: 'student'
     }
 }, {
+    tableName: 'users',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
@@ -69,8 +76,9 @@ export const Student = DATABASE.define('Student', {
     },
     user_id: {
         type: DataTypes.INTEGER,
+        allowNull: true,
         references: {
-            model: User,
+            model: 'users',
             key: 'id'
         }
     },
@@ -92,13 +100,22 @@ export const Student = DATABASE.define('Student', {
         unique: true,
         allowNull: false
     },
-    phone: DataTypes.STRING,
-    date_of_birth: DataTypes.DATE,
+    phone: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    date_of_birth: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
     gender: {
         type: DataTypes.STRING,
         allowNull: true
     },
-    address: DataTypes.TEXT,
+    address: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     enrollment_date: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW
@@ -108,6 +125,7 @@ export const Student = DATABASE.define('Student', {
         defaultValue: 'active'
     }
 }, {
+    tableName: 'students',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
@@ -128,7 +146,10 @@ export const Course = DATABASE.define('Course', {
         type: DataTypes.STRING,
         allowNull: false
     },
-    description: DataTypes.TEXT,
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true
+    },
     duration: {
         type: DataTypes.STRING,
         allowNull: true
@@ -137,10 +158,22 @@ export const Course = DATABASE.define('Course', {
         type: DataTypes.INTEGER,
         defaultValue: 3
     },
-    instructor: DataTypes.STRING,
-    department: DataTypes.STRING,
-    semester: DataTypes.STRING,
-    year: DataTypes.INTEGER,
+    instructor: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    department: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    semester: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    year: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     max_students: {
         type: DataTypes.INTEGER,
         defaultValue: 30
@@ -150,6 +183,7 @@ export const Course = DATABASE.define('Course', {
         defaultValue: 'active'
     }
 }, {
+    tableName: 'courses',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
@@ -163,15 +197,17 @@ export const Registration = DATABASE.define('Registration', {
     },
     student_id: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
-            model: Student,
+            model: 'students',
             key: 'id'
         }
     },
     course_id: {
         type: DataTypes.INTEGER,
+        allowNull: false,
         references: {
-            model: Course,
+            model: 'courses',
             key: 'id'
         }
     },
@@ -183,15 +219,19 @@ export const Registration = DATABASE.define('Registration', {
         type: DataTypes.STRING,
         defaultValue: 'enrolled'
     },
-    grade: DataTypes.STRING
+    grade: {
+        type: DataTypes.STRING,
+        allowNull: true
+    }
 }, {
+    tableName: 'registrations',
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
 });
 
 // Define Associations
-User.hasOne(Student, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+User.hasOne(Student, { foreignKey: 'user_id', onDelete: 'SET NULL' });
 Student.belongsTo(User, { foreignKey: 'user_id' });
 
 Student.hasMany(Registration, { foreignKey: 'student_id', onDelete: 'CASCADE' });
@@ -204,10 +244,11 @@ Registration.belongsTo(Course, { foreignKey: 'course_id' });
 export async function testConnection() {
     try {
         await DATABASE.authenticate();
-        console.log('Database connection established successfully.');
+        const dbType = DATABASE_URL === "local" ? "SQLite (local.db)" : "PostgreSQL (cloud)";
+        console.log(`✅ Database connection established successfully using ${dbType}`);
         return true;
     } catch (error) {
-        console.error('Unable to connect to the database:', error);
+        console.error('❌ Unable to connect to the database:', error.message);
         return false;
     }
 }
@@ -221,24 +262,29 @@ export async function initializeDatabase() {
             throw new Error('Database connection failed');
         }
         
-        // Sync all models - use alter: false to avoid schema conflicts
+        // Sync all models
         await DATABASE.sync({ force: false, alter: false });
         
-        console.log('Database synchronized successfully');
+        const dbType = DATABASE_URL === "local" ? "SQLite (local.db)" : "PostgreSQL (cloud)";
+        console.log(`✅ Database synchronized successfully using ${dbType}`);
         
-        // Create default admin user if it doesn't exist
+        // Create default admin user
         await createDefaultAdmin();
+        
+        // Create sample data for better experience
+        await createSampleData();
+        
     } catch (error) {
-        console.error('Error initializing database:', error);
+        console.error('❌ Error initializing database:', error.message);
         
         // If sync fails, try without alter
         try {
-            console.log('Retrying database sync without alter...');
+            console.log('🔄 Retrying database sync without alter...');
             await DATABASE.sync({ force: false });
-            console.log('Database synchronized successfully on retry');
+            console.log('✅ Database synchronized successfully on retry');
             await createDefaultAdmin();
         } catch (retryError) {
-            console.error('Database sync failed on retry:', retryError);
+            console.error('❌ Database sync failed on retry:', retryError.message);
             throw retryError;
         }
     }
@@ -256,8 +302,8 @@ async function createDefaultAdmin() {
             // Hash the password
             const hashedPassword = await bcrypt.hash(config.ADMIN_PASSWORD, 12);
             
-            // Create admin user (without student profile)
-            const adminUser = await User.create({
+            // Create admin user
+            await User.create({
                 email: config.ADMIN_EMAIL,
                 password: hashedPassword,
                 role: 'admin'
@@ -268,13 +314,11 @@ async function createDefaultAdmin() {
             console.log('🔑 Admin Password:', config.ADMIN_PASSWORD);
             console.log('⚠️  Please change the default password after first login!');
             
-            // Create some sample data for better dashboard experience
-            await createSampleData();
         } else {
             console.log('ℹ️  Admin user already exists');
         }
     } catch (error) {
-        console.error('❌ Error creating default admin user:', error);
+        console.error('❌ Error creating default admin user:', error.message);
     }
 }
 
@@ -378,9 +422,10 @@ async function createSampleData() {
 
         console.log('✅ Sample data created successfully!');
     } catch (error) {
-        console.error('❌ Error creating sample data:', error);
+        console.error('❌ Error creating sample data:', error.message);
     }
 }
+
 // Export database instance
 export { DATABASE, DATABASE as db };
 
@@ -395,14 +440,14 @@ export async function query(sql, params = []) {
         });
         return { rows: results };
     } catch (error) {
-        console.error('Database query error:', error);
+        console.error('Database query error:', error.message);
         throw error;
     }
 }
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
-    console.log('Shutting down gracefully...');
+    console.log('🔄 Shutting down gracefully...');
     await DATABASE.close();
     process.exit(0);
 });
