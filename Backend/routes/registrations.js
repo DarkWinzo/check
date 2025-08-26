@@ -1,5 +1,5 @@
 import express from 'express';
-import { DATABASE, Student, Course, Registration } from '../config/database.js';
+import { DATABASE, db, Student, Course, Registration } from '../config/database.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { validateRegistration, validatePagination, validateId } from '../middleware/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -23,7 +23,7 @@ router.post('/', authenticateToken, validateRegistration, asyncHandler(async (re
   }
 
   const studentId = student.id;
-  const transaction = await DATABASE.transaction();
+  const transaction = await db.transaction();
 
   try {
     const course = await Course.findByPk(courseId, { transaction });

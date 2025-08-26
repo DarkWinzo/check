@@ -1,5 +1,5 @@
 import express from 'express';
-import { Course, Registration, Student, DATABASE } from '../config/database.js';
+import { Course, Registration, Student, DATABASE, db } from '../config/database.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { validateCourseCreate, validateCourseUpdate, validatePagination, validateId } from '../middleware/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -13,15 +13,15 @@ router.get('/', authenticateToken, validatePagination, asyncHandler(async (req, 
   const whereClause = { status: 'active' };
   
   if (search) {
-    whereClause[DATABASE.Sequelize.Op.or] = [
-      { course_code: { [DATABASE.Sequelize.Op.like]: `%${search}%` } },
-      { course_name: { [DATABASE.Sequelize.Op.like]: `%${search}%` } },
-      { instructor: { [DATABASE.Sequelize.Op.like]: `%${search}%` } }
+    whereClause[db.Sequelize.Op.or] = [
+      { course_code: { [db.Sequelize.Op.like]: `%${search}%` } },
+      { course_name: { [db.Sequelize.Op.like]: `%${search}%` } },
+      { instructor: { [db.Sequelize.Op.like]: `%${search}%` } }
     ];
   }
   
   if (department) {
-    whereClause.department = { [DATABASE.Sequelize.Op.like]: `%${department}%` };
+    whereClause.department = { [db.Sequelize.Op.like]: `%${department}%` };
   }
   
   if (semester) {
@@ -84,9 +84,9 @@ router.get('/:id', authenticateToken, validateId, asyncHandler(async (req, res) 
     }],
     attributes: [
       '*',
-      [DATABASE.fn('COUNT', DATABASE.col('Registrations.id')), 'enrolled_count']
+      [db.fn('COUNT', db.col('Registrations.id')), 'enrolled_count']
     ],
-    group: ['Course.id']
+    group: [db.col('Course.id')]
   });
 
   if (!course) {

@@ -1,5 +1,5 @@
 import express from 'express';
-import { Student, User, Registration, Course, DATABASE } from '../config/database.js';
+import { Student, User, Registration, Course, DATABASE, db } from '../config/database.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { validateStudentCreate, validateStudentUpdate, validatePagination, validateId } from '../middleware/validation.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
@@ -19,7 +19,7 @@ router.post('/', authenticateToken, requireRole(['admin']), validateStudentCreat
     gender
   } = req.body;
 
-  const transaction = await DATABASE.transaction();
+  const transaction = await db.transaction();
 
   try {
     const existingStudent = await Student.findOne({
@@ -82,11 +82,11 @@ router.get('/', authenticateToken, requireRole(['admin']), validatePagination, a
   const whereClause = {};
   
   if (search) {
-    whereClause[DATABASE.Sequelize.Op.or] = [
-      { first_name: { [DATABASE.Sequelize.Op.like]: `%${search}%` } },
-      { last_name: { [DATABASE.Sequelize.Op.like]: `%${search}%` } },
-      { student_id: { [DATABASE.Sequelize.Op.like]: `%${search}%` } },
-      { email: { [DATABASE.Sequelize.Op.like]: `%${search}%` } }
+    whereClause[db.Sequelize.Op.or] = [
+      { first_name: { [db.Sequelize.Op.like]: `%${search}%` } },
+      { last_name: { [db.Sequelize.Op.like]: `%${search}%` } },
+      { student_id: { [db.Sequelize.Op.like]: `%${search}%` } },
+      { email: { [db.Sequelize.Op.like]: `%${search}%` } }
     ];
   }
 
@@ -98,9 +98,9 @@ router.get('/', authenticateToken, requireRole(['admin']), validatePagination, a
       include: [{
         model: Course,
         where: {
-          [DATABASE.Sequelize.Op.or]: [
-            { course_name: { [DATABASE.Sequelize.Op.like]: `%${course}%` } },
-            { course_code: { [DATABASE.Sequelize.Op.like]: `%${course}%` } }
+          [db.Sequelize.Op.or]: [
+            { course_name: { [db.Sequelize.Op.like]: `%${course}%` } },
+            { course_code: { [db.Sequelize.Op.like]: `%${course}%` } }
           ]
         }
       }],
