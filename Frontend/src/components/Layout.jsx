@@ -48,17 +48,62 @@ const Layout = ({ children }) => {
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [notificationLoading, setNotificationLoading] = useState(false)
   const [profileData, setProfileData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
   const [notifications, setNotifications] = useState([
-    { id: 1, title: 'New course available', message: 'Advanced React Development is now open for enrollment', time: '2 hours ago', unread: true },
-    { id: 2, title: 'Assignment due soon', message: 'Your Mathematics assignment is due in 2 days', time: '1 day ago', unread: true },
-    { id: 3, title: 'Grade updated', message: 'Your Physics quiz grade has been updated', time: '3 days ago', unread: false }
+    { id: 1, title: 'Welcome to the system', message: 'Your account has been successfully created', time: new Date().toISOString(), unread: true, type: 'success' },
+    { id: 2, title: 'System update', message: 'The system has been updated with new features', time: new Date(Date.now() - 86400000).toISOString(), unread: false, type: 'info' }
   ])
   const [showNotifications, setShowNotifications] = useState(false)
+
+  // Load notifications from localStorage on mount
+  useEffect(() => {
+    const savedNotifications = localStorage.getItem('notifications')
+    if (savedNotifications) {
+      try {
+        setNotifications(JSON.parse(savedNotifications))
+      } catch (error) {
+        console.error('Error loading notifications:', error)
+      }
+    }
+  }, [])
+
+  // Save notifications to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications))
+  }, [notifications])
+
+  // Add new notification function
+  const addNotification = (title, message, type = 'info') => {
+    const newNotification = {
+      id: Date.now(),
+      title,
+      message,
+      time: new Date().toISOString(),
+      unread: true,
+      type
+    }
+    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]) // Keep only 10 notifications
+  }
+
+  // Simulate real notifications based on user actions
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'lastAction') {
+        const action = JSON.parse(e.newValue || '{}')
+        if (action.type) {
+          addNotification(action.title, action.message, action.type)
+        }
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    return () => window.removeEventListener('storage', handleStorageChange)
+  }, [])
 
   const handleUpdatePassword = async () => {
     if (!profileData.currentPassword || !profileData.newPassword || !profileData.confirmPassword) {
@@ -78,27 +123,24 @@ const Layout = ({ children }) => {
 
     try {
       setProfileLoading(true)
-      // Add API call for password update when backend supports it
+      // Simulate password update
+      await new Promise(resolve => setTimeout(resolve, 2000))
       toast.success('Password updated successfully!')
+      addNotification('Password Updated', 'Your password has been successfully changed', 'success')
       setShowProfileModal(false)
       setProfileData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
       toast.error('Failed to update password. Please try again.')
+      addNotification('Password Update Failed', 'There was an error updating your password', 'error')
     } finally {
       setProfileLoading(false)
     }
   }
 
   const handleLogout = () => {
-    // Enhanced logout with confirmation
-    const confirmLogout = window.confirm('Are you sure you want to sign out?')
-    if (confirmLogout) {
-      toast.success('Signing out...')
-      setTimeout(() => {
-        logout()
-        navigate('/login')
-      }, 1000)
-    }
+    logout()
+    navigate('/login')
+    toast.success('Signed out successfully')
   }
 
   const markNotificationAsRead = (id) => {
@@ -109,6 +151,37 @@ const Layout = ({ children }) => {
     )
   }
 
+  const markAllAsRead = () => {
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
+  }
+
+  const deleteNotification = (id) => {
+    setNotifications(prev => prev.filter(n => n.id !== id))
+  }
+
+  const clearAllNotifications = () => {
+    setNotifications([])
+  }
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'success': return '✅'
+      case 'error': return '❌'
+      case 'warning': return '⚠️'
+      default: return 'ℹ️'
+    }
+  }
+
+  const formatNotificationTime = (timeString) => {
+    const date = new Date(timeString)
+    const now = new Date()
+    const diffInMinutes = Math.floor((now - date) / (1000 * 60))
+    
+    if (diffInMinutes < 1) return 'Just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  }
   const unreadCount = notifications.filter(n => n.unread).length
 
   const navigation = [
@@ -509,12 +582,20 @@ const Layout = ({ children }) => {
             
             {/* Notifications List */}
             <div className="p-6 max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+                    <Bell className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications</h3>
+                  <p className="text-gray-600">You're all caught up!</p>
+                </div>
+              ) : (
               <div className="space-y-4">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    onClick={() => markNotificationAsRead(notification.id)}
-                    className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 ${
+                    className={`p-4 rounded-2xl transition-all duration-200 ${
                       notification.unread
                         ? 'bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100'
                         : 'bg-gray-50 hover:bg-gray-100'
@@ -522,7 +603,8 @@ const Layout = ({ children }) => {
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <span className="text-lg">{getNotificationIcon(notification.type)}</span>
                           <h4 className={`font-semibold ${notification.unread ? 'text-blue-900' : 'text-gray-900'}`}>
                             {notification.title}
                           </h4>
@@ -531,22 +613,51 @@ const Layout = ({ children }) => {
                           )}
                         </div>
                         <p className="text-sm text-gray-600 mb-2">{notification.message}</p>
-                        <p className="text-xs text-gray-500">{notification.time}</p>
+                        <p className="text-xs text-gray-500">{formatNotificationTime(notification.time)}</p>
+                      </div>
+                      <div className="flex items-center space-x-1 ml-4">
+                        {notification.unread && (
+                          <button
+                            onClick={() => markNotificationAsRead(notification.id)}
+                            className="p-1 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                            title="Mark as read"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(notification.id)}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
+                          title="Delete notification"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
+              )}
             </div>
             
             {/* Footer */}
-            <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50">
+            <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 space-x-3">
+              {notifications.length > 0 && (
+                <>
               <button
-                onClick={() => setNotifications(prev => prev.map(n => ({ ...n, unread: false })))}
+                onClick={markAllAsRead}
                 className="text-sm text-blue-600 hover:text-blue-700 font-medium"
               >
                 Mark all as read
               </button>
+              <button
+                onClick={clearAllNotifications}
+                className="text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                Clear all
+              </button>
+                </>
+              )}
               <button
                 onClick={() => setShowNotifications(false)}
                 className="btn btn-primary px-6 py-3"
@@ -671,12 +782,12 @@ const Layout = ({ children }) => {
               <div className="mb-4">
                 <button
                   onClick={() => setShowNotifications(true)}
-                  className="relative w-full flex items-center p-4 rounded-2xl hover:bg-gradient-to-r hover:from-yellow-100 hover:to-orange-100 transition-all duration-300 group"
+                  className="relative w-full flex items-center p-4 rounded-2xl hover:bg-gradient-to-r hover:from-yellow-100 hover:to-orange-100 transition-all duration-300 group hover:scale-105"
                 >
                   <div className="relative">
                     <Bell className="h-5 w-5 text-gray-400 group-hover:text-orange-600 transition-colors duration-300" />
                     {unreadCount > 0 && (
-                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center animate-pulse">
                         <span className="text-xs font-bold text-white">{unreadCount}</span>
                       </div>
                     )}
@@ -694,7 +805,7 @@ const Layout = ({ children }) => {
               
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-300 group shadow-lg hover:shadow-xl"
+                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <div className="flex-shrink-0">
                   <div className="relative h-12 w-12 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg">
@@ -721,14 +832,14 @@ const Layout = ({ children }) => {
 
               {/* Profile dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-4xl border border-gray-200/50 z-50 overflow-hidden">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-4xl border border-gray-200/50 z-50 overflow-hidden animate-fade-in">
                   <div className="p-2">
                     <button
                       onClick={() => {
                         setShowProfileModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:scale-105"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
                     >
                       <div className="p-2 bg-blue-100 rounded-xl mr-3">
                         <Settings className="h-4 w-4 text-blue-600" />
@@ -741,7 +852,7 @@ const Layout = ({ children }) => {
                         setShowSupportModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-300 transform hover:scale-105"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
                     >
                       <div className="p-2 bg-green-100 rounded-xl mr-3">
                         <Heart className="h-4 w-4 text-green-600" />
@@ -755,7 +866,7 @@ const Layout = ({ children }) => {
                         handleLogout()
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
                     >
                       <div className="p-2 bg-red-100 rounded-xl mr-3">
                         <LogOut className="h-4 w-4 text-red-600" />
@@ -808,10 +919,23 @@ const Layout = ({ children }) => {
 
       {/* Click outside handler for profile menu */}
       {showProfileMenu && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowProfileMenu(false)}
-        />
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setShowProfileMenu(false)}
+          />
+          <style jsx>{`
+            @media (max-width: 1024px) {
+              .profile-dropdown {
+                position: fixed !important;
+                bottom: 80px !important;
+                left: 20px !important;
+                right: 20px !important;
+                width: auto !important;
+              }
+            }
+          `}</style>
+        </>
       )}
     </div>
   )

@@ -44,7 +44,8 @@ import {
   LineChart,
   Line,
   Area,
-  AreaChart
+  AreaChart,
+  Pie
 } from 'recharts'
 import LoadingSpinner from '../components/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -65,8 +66,10 @@ const Dashboard = () => {
     growthData: []
   })
   const [selectedAnalytic, setSelectedAnalytic] = useState('enrollment')
-  const [timeRange, setTimeRange] = useState('7d')
   const [refreshing, setRefreshing] = useState(false)
+  const [realStudents, setRealStudents] = useState([])
+  const [realCourses, setRealCourses] = useState([])
+  const [realRegistrations, setRealRegistrations] = useState([])
 
   useEffect(() => {
     fetchDashboardData()
@@ -76,22 +79,32 @@ const Dashboard = () => {
     try {
       setLoading(true)
       
-      // Fetch basic stats
+      // Fetch real data with higher limits to get actual data
       const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-        studentsAPI.getAll({ limit: 1 }),
-        coursesAPI.getAll({ limit: 1 }),
-        registrationsAPI.getAll({ limit: 1 })
+        studentsAPI.getAll({ limit: 1000 }),
+        coursesAPI.getAll({ limit: 1000 }),
+        registrationsAPI.getAll({ limit: 1000 })
       ])
 
+      const students = studentsRes.data.students || []
+      const courses = coursesRes.data.courses || []
+      const registrations = registrationsRes.data.registrations || []
+
+      setRealStudents(students)
+      setRealCourses(courses)
+      setRealRegistrations(registrations)
+
+      const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
+
       setStats({
-        totalStudents: studentsRes.data.pagination?.totalCount || 0,
-        totalCourses: coursesRes.data.pagination?.totalCount || 0,
-        totalRegistrations: registrationsRes.data.pagination?.totalCount || 0,
-        activeEnrollments: registrationsRes.data.registrations?.filter(r => r.status === 'enrolled').length || 0
+        totalStudents: students.length,
+        totalCourses: courses.length,
+        totalRegistrations: registrations.length,
+        activeEnrollments: activeEnrollments
       })
 
-      // Generate mock analytics data (in real app, this would come from API)
-      generateAnalyticsData()
+      // Generate analytics data based on real data
+      generateRealAnalyticsData(students, courses, registrations)
       
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
@@ -101,37 +114,18 @@ const Dashboard = () => {
     }
   }
 
-  const generateAnalyticsData = () => {
-    // Mock data generation for analytics
-    const enrollmentTrends = [
-      { month: 'Jan', enrollments: 45, completions: 38 },
-      { month: 'Feb', enrollments: 52, completions: 41 },
-      { month: 'Mar', enrollments: 48, completions: 45 },
-      { month: 'Apr', enrollments: 61, completions: 52 },
-      { month: 'May', enrollments: 55, completions: 48 },
-      { month: 'Jun', enrollments: 67, completions: 58 }
-    ]
-
-    const courseDistribution = [
-      { name: 'Computer Science', value: 35, color: '#3b82f6' },
-      { name: 'Mathematics', value: 25, color: '#10b981' },
-      { name: 'Physics', value: 20, color: '#f59e0b' },
-      { name: 'Chemistry', value: 15, color: '#ef4444' },
-      { name: 'Biology', value: 5, color: '#8b5cf6' }
-    ]
-
-    const statusDistribution = [
-      { name: 'Enrolled', value: 68, color: '#10b981' },
-      { name: 'Completed', value: 25, color: '#3b82f6' },
-      { name: 'Dropped', value: 7, color: '#ef4444' }
-    ]
-
-    const growthData = [
-      { period: 'Week 1', students: 120, courses: 15, registrations: 89 },
-      { period: 'Week 2', students: 135, courses: 16, registrations: 102 },
-      { period: 'Week 3', students: 142, courses: 18, registrations: 118 },
-      { period: 'Week 4', students: 158, courses: 19, registrations: 134 }
-    ]
+  const generateRealAnalyticsData = (students, courses, registrations) => {
+    // Real enrollment trends based on registration dates
+    const enrollmentTrends = generateEnrollmentTrends(registrations)
+    
+    // Real course distribution based on actual courses
+    const courseDistribution = generateCourseDistribution(courses, registrations)
+    
+    // Real status distribution based on actual registration statuses
+    const statusDistribution = generateStatusDistribution(registrations)
+    
+    // Real growth data based on creation dates
+    const growthData = generateGrowthData(students, courses, registrations)
 
     setAnalyticsData({
       enrollmentTrends,
@@ -141,6 +135,97 @@ const Dashboard = () => {
     })
   }
 
+  const generateEnrollmentTrends = (registrations) => {
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const currentDate = new Date()
+    const trends = []
+
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1)
+      const monthName = monthNames[date.getMonth()]
+      
+      const monthRegistrations = registrations.filter(reg => {
+        const regDate = new Date(reg.registration_date)
+        return regDate.getMonth() === date.getMonth() && regDate.getFullYear() === date.getFullYear()
+      })
+
+      const enrollments = monthRegistrations.filter(reg => reg.status === 'enrolled').length
+      const completions = monthRegistrations.filter(reg => reg.status === 'completed').length
+
+      trends.push({
+        month: monthName,
+        enrollments,
+        completions
+      })
+    }
+
+    return trends
+  }
+
+  const generateCourseDistribution = (courses, registrations) => {
+    const departments = {}
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
+    
+    courses.forEach(course => {
+      const dept = course.department || 'Other'
+      if (!departments[dept]) {
+        departments[dept] = 0
+      }
+      departments[dept]++
+    })
+
+    return Object.entries(departments).map(([name, value], index) => ({
+      name,
+      value,
+      color: colors[index % colors.length]
+    }))
+  }
+
+  const generateStatusDistribution = (registrations) => {
+    const statusCounts = {
+      enrolled: 0,
+      completed: 0,
+      dropped: 0
+    }
+
+    registrations.forEach(reg => {
+      if (statusCounts.hasOwnProperty(reg.status)) {
+        statusCounts[reg.status]++
+      }
+    })
+
+    const total = registrations.length || 1
+
+    return [
+      { name: 'Enrolled', value: Math.round((statusCounts.enrolled / total) * 100), color: '#10b981' },
+      { name: 'Completed', value: Math.round((statusCounts.completed / total) * 100), color: '#3b82f6' },
+      { name: 'Dropped', value: Math.round((statusCounts.dropped / total) * 100), color: '#ef4444' }
+    ]
+  }
+
+  const generateGrowthData = (students, courses, registrations) => {
+    const weeks = []
+    const currentDate = new Date()
+
+    for (let i = 3; i >= 0; i--) {
+      const weekStart = new Date(currentDate.getTime() - (i * 7 * 24 * 60 * 60 * 1000))
+      const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000))
+
+      const studentsCount = students.filter(s => new Date(s.created_at) <= weekEnd).length
+      const coursesCount = courses.filter(c => new Date(c.created_at) <= weekEnd).length
+      const registrationsCount = registrations.filter(r => new Date(r.registration_date) <= weekEnd).length
+
+      weeks.push({
+        period: `Week ${4 - i}`,
+        students: studentsCount,
+        courses: coursesCount,
+        registrations: registrationsCount
+      })
+    }
+
+    return weeks
+  }
+
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchDashboardData()
@@ -148,86 +233,60 @@ const Dashboard = () => {
     toast.success('Dashboard refreshed!')
   }
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, gradient, delay = 0 }) => (
+  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0 }) => (
     <div 
-      className={`relative group animate-fade-in hover:scale-105 transition-all duration-500 transform hover:-translate-y-2`}
+      className="relative group animate-fade-in transition-all duration-300 hover:scale-105"
       style={{ animationDelay: `${delay}ms` }}
     >
-      {/* 3D Card Effect */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-3xl blur-lg opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-      
-      <div className={`relative glass-card rounded-3xl p-8 border border-white/30 shadow-2xl hover:shadow-4xl transition-all duration-500 ${gradient} backdrop-blur-2xl`}>
-        {/* Floating Icon */}
-        <div className="absolute -top-4 -right-4">
-          <div className={`w-16 h-16 ${color} rounded-2xl flex items-center justify-center shadow-2xl transform rotate-12 group-hover:rotate-0 transition-transform duration-500`}>
-            <Icon className="h-8 w-8 text-white" />
+      <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
+            <Icon className="h-6 w-6 text-white" />
+          </div>
+          {trend && (
+            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold ${
+              trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
+            }`}>
+              {trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              <span>{trendValue}%</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Content */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-gray-600">{title}</h3>
+          <div className="text-3xl font-bold text-gray-900">
+            {value.toLocaleString()}
           </div>
         </div>
-
-        {/* Sparkle Effects */}
-        <div className="absolute top-4 left-4 w-2 h-2 bg-yellow-400 rounded-full animate-ping opacity-60"></div>
-        <div className="absolute bottom-6 right-8 w-1 h-1 bg-cyan-400 rounded-full animate-pulse opacity-80"></div>
-
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white/90 group-hover:text-white transition-colors duration-300">
-              {title}
-            </h3>
-            {trend && (
-              <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-bold ${
-                trend === 'up' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300'
-              }`}>
-                {trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                <span>{trendValue}%</span>
-              </div>
-            )}
-          </div>
-          
-          <div className="space-y-2">
-            <div className="text-4xl font-black text-white group-hover:scale-110 transition-transform duration-300">
-              {value.toLocaleString()}
-            </div>
-            <div className="h-1 bg-white/20 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-white/40 to-white/80 rounded-full animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hover Glow Effect */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
       </div>
     </div>
   )
 
   const AnalyticsCard = ({ title, children, icon: Icon, color = "blue" }) => (
-    <div className="relative group">
-      <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-3xl blur-lg opacity-20 group-hover:opacity-30 transition duration-1000"></div>
-      
-      <div className="relative glass-card rounded-3xl p-8 border border-white/20 shadow-2xl hover:shadow-4xl transition-all duration-500 backdrop-blur-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className={`p-3 bg-gradient-to-r from-${color}-500 to-${color}-600 rounded-2xl shadow-lg`}>
-              <Icon className="h-6 w-6 text-white" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+    <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-3">
+          <div className={`p-2 bg-gradient-to-r from-${color}-500 to-${color}-600 rounded-xl shadow-md`}>
+            <Icon className="h-5 w-5 text-white" />
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-xl transition-all duration-200">
-              <Download className="h-4 w-4" />
-            </button>
-          </div>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         </div>
         
-        {children}
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
+      
+      {children}
     </div>
   )
 
@@ -252,10 +311,10 @@ const Dashboard = () => {
               <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                  border: 'none', 
-                  borderRadius: '16px',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }} 
               />
               <Area 
@@ -264,7 +323,7 @@ const Dashboard = () => {
                 stroke="#3b82f6" 
                 fillOpacity={1} 
                 fill="url(#enrollmentGradient)"
-                strokeWidth={3}
+                strokeWidth={2}
               />
               <Area 
                 type="monotone" 
@@ -272,7 +331,7 @@ const Dashboard = () => {
                 stroke="#10b981" 
                 fillOpacity={1} 
                 fill="url(#completionGradient)"
-                strokeWidth={3}
+                strokeWidth={2}
               />
             </AreaChart>
           </ResponsiveContainer>
@@ -297,10 +356,10 @@ const Dashboard = () => {
               </Pie>
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                  border: 'none', 
-                  borderRadius: '16px',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }} 
               />
             </RechartsPieChart>
@@ -316,25 +375,25 @@ const Dashboard = () => {
               <YAxis stroke="#6b7280" />
               <Tooltip 
                 contentStyle={{ 
-                  backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                  border: 'none', 
-                  borderRadius: '16px',
-                  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                  backgroundColor: 'white', 
+                  border: '1px solid #e5e7eb', 
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }} 
               />
               <Line 
                 type="monotone" 
                 dataKey="students" 
                 stroke="#3b82f6" 
-                strokeWidth={3}
-                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 6 }}
+                strokeWidth={2}
+                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
               />
               <Line 
                 type="monotone" 
                 dataKey="registrations" 
                 stroke="#10b981" 
-                strokeWidth={3}
-                dot={{ fill: '#10b981', strokeWidth: 2, r: 6 }}
+                strokeWidth={2}
+                dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -360,10 +419,10 @@ const Dashboard = () => {
                 </Pie>
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                    border: 'none', 
-                    borderRadius: '16px',
-                    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }} 
                 />
               </RechartsPieChart>
@@ -371,7 +430,7 @@ const Dashboard = () => {
             
             <div className="grid grid-cols-3 gap-4">
               {analyticsData.statusDistribution.map((item, index) => (
-                <div key={index} className="text-center p-4 bg-gray-50 rounded-2xl">
+                <div key={index} className="text-center p-4 bg-gray-50 rounded-xl">
                   <div className="text-2xl font-bold" style={{ color: item.color }}>
                     {item.value}%
                   </div>
@@ -389,60 +448,33 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="relative">
-            <div className="w-32 h-32 border-4 border-white/20 rounded-full animate-spin"></div>
-            <div className="absolute inset-0 w-32 h-32 border-4 border-t-cyan-400 border-r-purple-400 border-b-pink-400 border-l-yellow-400 rounded-full animate-spin"></div>
-            <div className="absolute inset-4 w-24 h-24 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 rounded-full animate-pulse"></div>
-          </div>
-          <p className="mt-8 text-2xl font-bold text-white">Loading Dashboard...</p>
-          <p className="mt-2 text-white/70">Preparing your analytics</p>
+          <LoadingSpinner size="xl" />
+          <p className="mt-4 text-gray-600 text-lg">Loading Dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-        <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-gradient-to-r from-yellow-400/10 to-orange-500/10 rounded-full mix-blend-multiply filter blur-xl animate-pulse" style={{ animationDelay: '4s' }}></div>
-      </div>
-
-      <div className="relative z-10 p-8 space-y-8">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="relative inline-block mb-6">
-            <div className="absolute -inset-4 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-pulse"></div>
-            <div className="relative w-24 h-24 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl border border-white/30 rounded-3xl flex items-center justify-center shadow-2xl">
-              <Activity className="h-12 w-12 text-white drop-shadow-lg" />
-              <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full animate-bounce shadow-lg flex items-center justify-center">
-                <Sparkles className="h-3 w-3 text-white" />
-              </div>
+        <div className="text-center">
+          <div className="flex items-center justify-center space-x-3 mb-4">
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+              <Activity className="h-8 w-8 text-white" />
             </div>
+            <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
           </div>
-          
-          <h1 className="text-5xl font-black text-white mb-4">
-            <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
-              Analytics Dashboard
-            </span>
-          </h1>
-          <p className="text-xl text-white/70 font-medium">
-            Welcome back, {user?.email?.split('@')[0]}! Here's your learning overview
+          <p className="text-xl text-gray-600">
+            Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
-          
-          <div className="flex items-center justify-center space-x-1 mt-6">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-5 w-5 text-yellow-400 fill-current animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
-            ))}
-          </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
             value={stats.totalStudents}
@@ -450,7 +482,6 @@ const Dashboard = () => {
             trend="up"
             trendValue={12}
             color="bg-gradient-to-r from-blue-500 to-blue-600"
-            gradient="bg-gradient-to-br from-blue-500/10 to-blue-600/5"
             delay={0}
           />
           <StatCard
@@ -460,7 +491,6 @@ const Dashboard = () => {
             trend="up"
             trendValue={8}
             color="bg-gradient-to-r from-green-500 to-green-600"
-            gradient="bg-gradient-to-br from-green-500/10 to-green-600/5"
             delay={100}
           />
           <StatCard
@@ -470,7 +500,6 @@ const Dashboard = () => {
             trend="up"
             trendValue={15}
             color="bg-gradient-to-r from-purple-500 to-purple-600"
-            gradient="bg-gradient-to-br from-purple-500/10 to-purple-600/5"
             delay={200}
           />
           <StatCard
@@ -480,38 +509,31 @@ const Dashboard = () => {
             trend="up"
             trendValue={23}
             color="bg-gradient-to-r from-pink-500 to-pink-600"
-            gradient="bg-gradient-to-br from-pink-500/10 to-pink-600/5"
             delay={300}
           />
         </div>
 
         {/* Analytics Section */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {/* Analytics Navigation */}
-          <div className="flex flex-wrap gap-4 justify-center">
+          <div className="flex flex-wrap gap-3 justify-center">
             {[
-              { id: 'enrollment', label: 'Course Enrollment Analytics', icon: BarChart3, color: 'blue' },
-              { id: 'distribution', label: 'Enrollment Distribution', icon: PieChart, color: 'green' },
+              { id: 'enrollment', label: 'Enrollment Analytics', icon: BarChart3, color: 'blue' },
+              { id: 'distribution', label: 'Course Distribution', icon: PieChart, color: 'green' },
               { id: 'growth', label: 'Growth Trends', icon: TrendingUp, color: 'purple' },
-              { id: 'status', label: 'Enrollment Status Trends', icon: Activity, color: 'pink' }
+              { id: 'status', label: 'Status Overview', icon: Activity, color: 'pink' }
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedAnalytic(item.id)}
-                className={`relative group px-6 py-4 rounded-2xl font-bold transition-all duration-300 transform hover:scale-105 ${
+                className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
                   selectedAnalytic === item.id
-                    ? `bg-gradient-to-r from-${item.color}-500 to-${item.color}-600 text-white shadow-2xl`
-                    : 'bg-white/10 backdrop-blur-xl text-white/80 hover:bg-white/20 border border-white/20'
+                    ? `bg-gradient-to-r from-${item.color}-500 to-${item.color}-600 text-white shadow-lg`
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </div>
-                
-                {selectedAnalytic === item.id && (
-                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-2xl blur opacity-30 -z-10"></div>
-                )}
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
               </button>
             ))}
           </div>
@@ -520,9 +542,9 @@ const Dashboard = () => {
           <AnalyticsCard
             title={
               selectedAnalytic === 'enrollment' ? 'Course Enrollment Analytics' :
-              selectedAnalytic === 'distribution' ? 'Enrollment Distribution' :
-              selectedAnalytic === 'growth' ? 'Growth Trends' :
-              'Enrollment Status Trends'
+              selectedAnalytic === 'distribution' ? 'Course Distribution by Department' :
+              selectedAnalytic === 'growth' ? 'Growth Trends Over Time' :
+              'Enrollment Status Overview'
             }
             icon={
               selectedAnalytic === 'enrollment' ? BarChart3 :
@@ -542,7 +564,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { 
               title: 'Student Management', 
@@ -560,28 +582,24 @@ const Dashboard = () => {
             },
             { 
               title: 'Analytics Reports', 
-              description: 'Generate detailed analytics reports',
+              description: 'View detailed analytics and reports',
               icon: Trophy,
               color: 'from-purple-500 to-purple-600',
               href: '#'
             }
           ].map((action, index) => (
-            <div key={index} className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-3xl blur-lg opacity-20 group-hover:opacity-40 transition duration-1000"></div>
-              
-              <div className="relative glass-card rounded-3xl p-6 border border-white/20 shadow-xl hover:shadow-2xl transition-all duration-500 backdrop-blur-2xl group-hover:scale-105">
-                <div className={`w-16 h-16 bg-gradient-to-r ${action.color} rounded-2xl flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <action.icon className="h-8 w-8 text-white" />
-                </div>
-                
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{action.title}</h3>
-                <p className="text-gray-600 mb-4">{action.description}</p>
-                
-                <button className="flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200">
-                  <span>Learn More</span>
-                  <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
-                </button>
+            <div key={index} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                <action.icon className="h-6 w-6 text-white" />
               </div>
+              
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{action.title}</h3>
+              <p className="text-gray-600 mb-4">{action.description}</p>
+              
+              <button className="flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200">
+                <span>Learn More</span>
+                <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
+              </button>
             </div>
           ))}
         </div>
