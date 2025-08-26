@@ -53,10 +53,7 @@ const Layout = ({ children }) => {
     newPassword: '',
     confirmPassword: ''
   })
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Welcome to the system', message: 'Your account has been successfully created', time: new Date().toISOString(), unread: true, type: 'success' },
-    { id: 2, title: 'System update', message: 'The system has been updated with new features', time: new Date(Date.now() - 86400000).toISOString(), unread: false, type: 'info' }
-  ])
+  const [notifications, setNotifications] = useState([])
   const [showNotifications, setShowNotifications] = useState(false)
 
   // Load notifications from localStorage on mount
@@ -64,16 +61,32 @@ const Layout = ({ children }) => {
     const savedNotifications = localStorage.getItem('notifications')
     if (savedNotifications) {
       try {
-        setNotifications(JSON.parse(savedNotifications))
+        const parsed = JSON.parse(savedNotifications)
+        setNotifications(Array.isArray(parsed) ? parsed : [])
       } catch (error) {
         console.error('Error loading notifications:', error)
+        setNotifications([])
       }
+    } else {
+      // Initialize with welcome notification for new users
+      const welcomeNotification = {
+        id: Date.now(),
+        title: 'Welcome to EduFlow Pro',
+        message: `Welcome ${user?.email?.split('@')[0]}! Your account is ready to use.`,
+        time: new Date().toISOString(),
+        unread: true,
+        type: 'success'
+      }
+      setNotifications([welcomeNotification])
+      localStorage.setItem('notifications', JSON.stringify([welcomeNotification]))
     }
-  }, [])
+  }, [user])
 
   // Save notifications to localStorage when they change
   React.useEffect(() => {
-    localStorage.setItem('notifications', JSON.stringify(notifications))
+    if (notifications.length > 0) {
+      localStorage.setItem('notifications', JSON.stringify(notifications))
+    }
   }, [notifications])
 
   // Add new notification function
@@ -86,23 +99,32 @@ const Layout = ({ children }) => {
       unread: true,
       type
     }
-    setNotifications(prev => [newNotification, ...prev.slice(0, 9)]) // Keep only 10 notifications
+    setNotifications(prev => {
+      const updated = [newNotification, ...prev.slice(0, 9)] // Keep only 10 notifications
+      localStorage.setItem('notifications', JSON.stringify(updated))
+      return updated
+    })
   }
 
-  // Simulate real notifications based on user actions
+  // Listen for system events to create notifications
   React.useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'lastAction') {
-        const action = JSON.parse(e.newValue || '{}')
-        if (action.type) {
-          addNotification(action.title, action.message, action.type)
-        }
+    const handleSystemEvent = (event) => {
+      if (event.detail) {
+        addNotification(event.detail.title, event.detail.message, event.detail.type)
       }
     }
 
-    window.addEventListener('storage', handleStorageChange)
-    return () => window.removeEventListener('storage', handleStorageChange)
+    window.addEventListener('systemNotification', handleSystemEvent)
+    return () => window.removeEventListener('systemNotification', handleSystemEvent)
   }, [])
+
+  // Function to trigger system notifications
+  const triggerNotification = (title, message, type = 'info') => {
+    const event = new CustomEvent('systemNotification', {
+      detail: { title, message, type }
+    })
+    window.dispatchEvent(event)
+  }
 
   const handleUpdatePassword = async () => {
     if (!profileData.currentPassword || !profileData.newPassword || !profileData.confirmPassword) {
@@ -125,18 +147,21 @@ const Layout = ({ children }) => {
       // Simulate password update
       await new Promise(resolve => setTimeout(resolve, 2000))
       toast.success('Password updated successfully!')
-      addNotification('Password Updated', 'Your password has been successfully changed', 'success')
+      triggerNotification('Password Updated', 'Your password has been successfully changed', 'success')
       setShowProfileModal(false)
       setProfileData({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
       toast.error('Failed to update password. Please try again.')
-      addNotification('Password Update Failed', 'There was an error updating your password', 'error')
+      triggerNotification('Password Update Failed', 'There was an error updating your password', 'error')
     } finally {
       setProfileLoading(false)
     }
   }
 
   const handleLogout = () => {
+    // Clear notifications on logout
+    localStorage.removeItem('notifications')
+    setNotifications([])
     logout()
     navigate('/login')
     toast.success('Signed out successfully')
@@ -144,22 +169,35 @@ const Layout = ({ children }) => {
 
   const markNotificationAsRead = (id) => {
     setNotifications(prev => 
-      prev.map(notif => 
-        notif.id === id ? { ...notif, unread: false } : notif
-      )
+      {
+        const updated = prev.map(notif => 
+          notif.id === id ? { ...notif, unread: false } : notif
+        )
+        localStorage.setItem('notifications', JSON.stringify(updated))
+        return updated
+      }
     )
   }
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
+    setNotifications(prev => {
+      const updated = prev.map(n => ({ ...n, unread: false }))
+      localStorage.setItem('notifications', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const deleteNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
+    setNotifications(prev => {
+      const updated = prev.filter(n => n.id !== id)
+      localStorage.setItem('notifications', JSON.stringify(updated))
+      return updated
+    })
   }
 
   const clearAllNotifications = () => {
     setNotifications([])
+    localStorage.removeItem('notifications')
   }
 
   const getNotificationIcon = (type) => {
@@ -194,13 +232,13 @@ const Layout = ({ children }) => {
     if (!showProfileModal) return null
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-[60] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowProfileModal(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-4xl rounded-3xl border border-gray-100">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center space-x-4">
@@ -387,13 +425,13 @@ const Layout = ({ children }) => {
     if (!showSupportModal) return null
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-[60] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowSupportModal(false)}
           />
-          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-4xl rounded-3xl border border-gray-100">
+          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
               <div className="flex items-center space-x-4">
@@ -547,13 +585,13 @@ const Layout = ({ children }) => {
     if (!showNotifications) return null
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="fixed inset-0 z-[60] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowNotifications(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-4xl rounded-3xl border border-gray-100">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
             {/* Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
               <div className="flex items-center space-x-4">
@@ -674,7 +712,7 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
-      <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
+      <div className={`fixed inset-0 z-[70] lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
           <div className="flex h-16 items-center justify-between px-4 border-b">
@@ -832,7 +870,7 @@ const Layout = ({ children }) => {
 
               {/* Profile dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-4xl border border-gray-200/50 z-50 overflow-hidden animate-fade-in">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[80] overflow-hidden animate-fade-in">
                   <div className="p-2">
                     <button
                       onClick={() => {
@@ -900,7 +938,19 @@ const Layout = ({ children }) => {
               <GraduationCap className="h-6 w-6 text-primary-600" />
               <span className="text-lg font-bold text-gray-900">SRS</span>
             </div>
-            <div className="w-6" /> {/* Spacer */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowNotifications(true)}
+                className="relative p-2 text-gray-500 hover:text-gray-600"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-white">{Math.min(unreadCount, 9)}</span>
+                  </div>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -921,20 +971,9 @@ const Layout = ({ children }) => {
       {showProfileMenu && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[75]"
             onClick={() => setShowProfileMenu(false)}
           />
-          <style jsx>{`
-            @media (max-width: 1024px) {
-              .profile-dropdown {
-                position: fixed !important;
-                bottom: 80px !important;
-                left: 20px !important;
-                right: 20px !important;
-                width: auto !important;
-              }
-            }
-          `}</style>
         </>
       )}
     </div>

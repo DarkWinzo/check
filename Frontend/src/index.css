@@ -370,3 +370,39 @@
 .transition-all-700 {
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* Responsive modal fixes */
+@media (max-width: 768px) {
+  .fixed.inset-0.z-\\[60\\] .inline-block {
+    margin: 1rem;
+    width: calc(100% - 2rem);
+    max-width: none;
+  }
+  
+  .fixed.inset-0.z-\\[60\\] .p-8 {
+    padding: 1.5rem;
+  }
+  
+  .fixed.inset-0.z-\\[60\\] .space-y-8 {
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .fixed.inset-0.z-\\[60\\] .inline-block {
+    margin: 0.5rem;
+    width: calc(100% - 1rem);
+  }
+  
+  .fixed.inset-0.z-\\[60\\] .p-8 {
+    padding: 1rem;
+  }
+  
+  .fixed.inset-0.z-\\[60\\] .text-2xl {
+    font-size: 1.5rem;
+  }
+  
+  .fixed.inset-0.z-\\[60\\] .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}

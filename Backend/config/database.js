@@ -267,9 +267,6 @@ async function createDefaultAdmin() {
             console.log('📧 Admin Email:', config.ADMIN_EMAIL);
             console.log('🔑 Admin Password:', config.ADMIN_PASSWORD);
             console.log('⚠️  Please change the default password after first login!');
-            
-            // Create some sample data for better dashboard experience
-            await createSampleData();
         } else {
             console.log('ℹ️  Admin user already exists');
         }
@@ -278,109 +275,6 @@ async function createDefaultAdmin() {
     }
 }
 
-// Create sample data for demonstration
-async function createSampleData() {
-    try {
-        // Create sample courses
-        const sampleCourses = [
-            {
-                course_code: 'CS101',
-                course_name: 'Introduction to Computer Science',
-                description: 'Fundamental concepts of computer science and programming.',
-                duration: '1 semester',
-                instructor: 'Dr. John Smith',
-                department: 'Computer Science',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 30,
-                credits: 3
-            },
-            {
-                course_code: 'MATH201',
-                course_name: 'Calculus II',
-                description: 'Advanced calculus concepts including integration and series.',
-                duration: '1 semester',
-                instructor: 'Dr. Sarah Johnson',
-                department: 'Mathematics',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 25,
-                credits: 4
-            },
-            {
-                course_code: 'PHYS101',
-                course_name: 'General Physics I',
-                description: 'Introduction to mechanics, waves, and thermodynamics.',
-                duration: '1 semester',
-                instructor: 'Dr. Michael Brown',
-                department: 'Physics',
-                semester: 'Fall 2024',
-                year: 2024,
-                max_students: 20,
-                credits: 4
-            }
-        ];
-
-        for (const courseData of sampleCourses) {
-            const existingCourse = await Course.findOne({
-                where: { course_code: courseData.course_code }
-            });
-            if (!existingCourse) {
-                await Course.create(courseData);
-            }
-        }
-
-        // Create sample students
-        const sampleStudents = [
-            {
-                student_id: 'STU001',
-                first_name: 'Alice',
-                last_name: 'Johnson',
-                email: 'alice.johnson@student.edu',
-                phone: '+1-555-0101',
-                date_of_birth: '2000-05-15',
-                gender: 'female',
-                address: '123 Main St, City, State 12345',
-                status: 'active'
-            },
-            {
-                student_id: 'STU002',
-                first_name: 'Bob',
-                last_name: 'Smith',
-                email: 'bob.smith@student.edu',
-                phone: '+1-555-0102',
-                date_of_birth: '1999-08-22',
-                gender: 'male',
-                address: '456 Oak Ave, City, State 12345',
-                status: 'active'
-            },
-            {
-                student_id: 'STU003',
-                first_name: 'Carol',
-                last_name: 'Davis',
-                email: 'carol.davis@student.edu',
-                phone: '+1-555-0103',
-                date_of_birth: '2001-02-10',
-                gender: 'female',
-                address: '789 Pine Rd, City, State 12345',
-                status: 'active'
-            }
-        ];
-
-        for (const studentData of sampleStudents) {
-            const existingStudent = await Student.findOne({
-                where: { student_id: studentData.student_id }
-            });
-            if (!existingStudent) {
-                await Student.create(studentData);
-            }
-        }
-
-        console.log('✅ Sample data created successfully!');
-    } catch (error) {
-        console.error('❌ Error creating sample data:', error);
-    }
-}
 // Export database instance
 export { DATABASE, DATABASE as db };
 
