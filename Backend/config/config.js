@@ -25,7 +25,7 @@ export const config = {
   DB_NAME: process.env.DB_NAME || 'student_registration',
   DB_USER: process.env.DB_USER || 'postgres',
   DB_PASSWORD: process.env.DB_PASSWORD || 'password',
-  DATABASE_URL: process.env.DATABASE_URL || 'local',
+  DATABASE_URL: process.env.DATABASE_URL || 'postgresql://postgres:Isuru%402025@localhost:5432/testdb',
 
   // JWT Config
   JWT_SECRET: process.env.JWT_SECRET || '52deb4fa35a370a27d31ca22eccb0254c253186bd66a73928b5d8ef14d34a04b',

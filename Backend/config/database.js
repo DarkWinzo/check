@@ -24,11 +24,10 @@ const DATABASE = DATABASE_URL === "local" ?
     }) :
     new Sequelize(DATABASE_URL, {
         dialect: 'postgres',
-        ssl: true,
+        ssl: false,
         protocol: 'postgres',
-        dialectOptions: { 
-            native: true, 
-            ssl: { require: true, rejectUnauthorized: false } 
+        dialectOptions: {
+            // Remove SSL for local development
         },
         logging: false
     });
