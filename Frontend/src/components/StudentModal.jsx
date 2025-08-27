@@ -201,9 +201,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
           onClick={onClose}
         />
 
-        {/* Modal */}
         <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
@@ -235,10 +233,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
             </div>
           </div>
 
-          {/* Content */}
           <form onSubmit={handleSubmit(onSubmit)} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* First Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   First Name *
@@ -258,7 +254,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Last Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Last Name *
@@ -278,7 +273,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Student ID */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Student ID *
@@ -298,7 +292,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Email */}
               <div className="lg:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Email Address *
@@ -327,7 +320,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number
@@ -344,7 +336,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Date of Birth */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Date of Birth
@@ -360,7 +351,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Gender */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Gender
@@ -378,7 +368,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </select>
               </div>
 
-              {/* Course Enrollment (only for create mode) */}
               {mode === 'create' && (
                 <>
                 <div className="md:col-span-2 lg:col-span-3">
@@ -429,7 +418,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
                 </>
               )}
-              {/* Address */}
               <div className="md:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Address
@@ -446,7 +434,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Current Registrations (only for view/edit mode) */}
               {(mode === 'view' || mode === 'edit') && student && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -555,7 +542,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               )}
               
-              {/* Course Selection Modal for Edit Mode */}
               {(mode === 'edit' || isEditing) && studentRegistrations.length > 0 && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
@@ -630,7 +616,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               )}
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
               {isEditing ? (
                 <>

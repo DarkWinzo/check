@@ -126,7 +126,6 @@ const Students = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3 mb-2">
@@ -154,7 +153,6 @@ const Students = () => {
         )}
       </div>
 
-      {/* Search and Filters */}
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -199,14 +197,12 @@ const Students = () => {
         </div>
       </div>
 
-      {/* Students Grid/List */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <LoadingSpinner size="lg" />
         </div>
       ) : students.length > 0 ? (
         <>
-          {/* Desktop Table View */}
           <div className="hidden lg:block">
             <div className="glass-card rounded-2xl border border-white/20 shadow-xl overflow-hidden">
               <div className="overflow-x-auto">
@@ -323,7 +319,6 @@ const Students = () => {
             </div>
           </div>
 
-          {/* Mobile Card View */}
           <div className="lg:hidden space-y-4">
             {students.map((student) => (
               <div key={student.id} className="glass-card rounded-2xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
@@ -436,7 +431,6 @@ const Students = () => {
         </div>
       )}
 
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="text-sm text-gray-700">
@@ -465,7 +459,6 @@ const Students = () => {
         </div>
       )}
 
-      {/* Student Modal */}
       {showModal && (
         <StudentModal
           isOpen={showModal}

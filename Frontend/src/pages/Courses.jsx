@@ -57,7 +57,6 @@ const Courses = () => {
       await registrationsAPI.create({ courseId })
       toast.success('Successfully registered for course!')
       
-      // Refresh courses to update enrollment count
       fetchCourses()
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to register for course. Please try again.'
@@ -143,7 +142,6 @@ const Courses = () => {
             onClick={() => setShowEnrollmentModal(false)}
           />
           <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg">
@@ -162,9 +160,7 @@ const Courses = () => {
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6">
-              {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-blue-600">{enrolledStudents.length}</div>
@@ -182,7 +178,6 @@ const Courses = () => {
                 </div>
               </div>
 
-              {/* Enrolled Students List */}
               <div className="space-y-4">
                 <h4 className="text-lg font-bold text-gray-900 mb-4">Enrolled Students</h4>
                 
@@ -244,7 +239,6 @@ const Courses = () => {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
               <button
                 onClick={() => setShowEnrollmentModal(false)}
@@ -275,7 +269,6 @@ const Courses = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3 mb-2">
@@ -300,7 +293,6 @@ const Courses = () => {
         )}
       </div>
 
-      {/* Filters */}
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -345,7 +337,6 @@ const Courses = () => {
         </div>
       </div>
 
-      {/* Courses Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <LoadingSpinner size="lg" />
@@ -354,7 +345,6 @@ const Courses = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
             <div key={course.id} className="glass-card rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden">
-              {/* Course Header */}
               <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 border-b border-green-200">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -376,7 +366,6 @@ const Courses = () => {
                 </div>
               </div>
 
-              {/* Course Content */}
               <div className="p-6">
                 {course.description && (
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
@@ -405,7 +394,6 @@ const Courses = () => {
                   
                 </div>
 
-                {/* Enrollment Status */}
                 <div className="bg-gray-50 rounded-xl p-4 mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -431,7 +419,6 @@ const Courses = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2">
                   {user?.role === 'admin' ? (
                     <>
@@ -532,7 +519,6 @@ const Courses = () => {
         </div>
       )}
 
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="text-sm text-gray-700">
@@ -561,7 +547,6 @@ const Courses = () => {
         </div>
       )}
 
-      {/* Course Modal */}
       {showModal && (
         <CourseModal
           isOpen={showModal}
@@ -572,7 +557,6 @@ const Courses = () => {
         />
       )}
 
-      {/* Enrollment Modal */}
       <EnrollmentModal />
     </div>
   )

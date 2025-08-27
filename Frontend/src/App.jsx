@@ -12,7 +12,6 @@ import SplashCursor from './services/text'
 function App() {
   const { user, loading } = useAuth()
 
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -35,13 +34,12 @@ function App() {
 
   return (
     <Layout>
-       <SplashCursor />
+      <SplashCursor />
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/students" element={<Students />} />
-        
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>

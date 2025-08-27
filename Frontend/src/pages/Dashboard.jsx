@@ -74,11 +74,10 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData()
     
-    // Set up auto-refresh every 30 seconds
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true) // Silent refresh
+        fetchDashboardData(true)
       }, 30000)
     }
     
@@ -119,7 +118,6 @@ const Dashboard = () => {
       generateRealAnalyticsData(students, courses, registrations)
       
       if (silent) {
-        // Show a subtle notification for auto-refresh
         const event = new CustomEvent('systemNotification', {
           detail: { 
             title: 'Dashboard Updated', 
@@ -290,13 +288,11 @@ const Dashboard = () => {
       onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-        {/* Auto-refresh indicator */}
         <div className="absolute top-2 right-2">
           <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
                title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
         </div>
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
             <Icon className="h-6 w-6 text-white" />
@@ -311,7 +307,6 @@ const Dashboard = () => {
           )}
         </div>
         
-        {/* Content */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-600">{title}</h3>
           <div className="text-3xl font-bold text-gray-900">
@@ -319,7 +314,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </div>
@@ -622,7 +616,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  // Trigger a subtle refresh when switching analytics
                   fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
@@ -640,7 +633,6 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Analytics Content */}
           <AnalyticsCard
             title={
               selectedAnalytic === 'enrollment' ? 'Course Enrollment Analytics' :
@@ -665,7 +657,6 @@ const Dashboard = () => {
           </AnalyticsCard>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { 
@@ -712,7 +703,6 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* System Status */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
