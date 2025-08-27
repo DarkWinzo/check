@@ -127,7 +127,6 @@ const Dashboard = () => {
       }
       
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
       if (!silent) {
         toast.error('Failed to load dashboard data')
       }

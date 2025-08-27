@@ -71,7 +71,6 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching courses:', error);
     res.status(500).json({ message: 'Server error fetching courses' });
   }
 });
@@ -101,7 +100,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
     res.json(course);
 
   } catch (error) {
-    console.error('Error fetching course:', error);
     res.status(500).json({ message: 'Server error fetching course' });
   }
 });
@@ -150,7 +148,6 @@ router.post('/', authenticateToken, requireRole(['admin']), [
     });
 
   } catch (error) {
-    console.error('Error creating course:', error);
     res.status(500).json({ message: 'Server error creating course' });
   }
 });
@@ -210,7 +207,6 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
     });
 
   } catch (error) {
-    console.error('Error updating course:', error);
     res.status(500).json({ 
       message: 'Server error updating course',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -234,7 +230,6 @@ router.get('/:id/registrations', authenticateToken, requireRole(['admin']), asyn
     res.json(registrations);
 
   } catch (error) {
-    console.error('Error fetching course registrations:', error);
     res.status(500).json({ message: 'Server error fetching registrations' });
   }
 });
@@ -268,7 +263,6 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
     });
 
   } catch (error) {
-    console.error('Error deleting course:', error);
     res.status(500).json({ message: 'Server error deleting course' });
   }
 });

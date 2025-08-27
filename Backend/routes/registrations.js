@@ -79,7 +79,6 @@ router.post('/', authenticateToken, [
       });
       await transaction.commit();
 
-      console.log('Registration created successfully:', completeRegistration.toJSON());
       res.status(201).json({
         message: 'Successfully registered for course',
         registration: completeRegistration
@@ -91,7 +90,6 @@ router.post('/', authenticateToken, [
     }
 
   } catch (error) {
-    console.error('Error registering for course:', error);
     res.status(500).json({ message: 'Server error during registration' });
   }
 });
@@ -165,7 +163,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('Error dropping course:', error);
     res.status(500).json({ message: 'Server error dropping course' });
   }
 });
@@ -221,7 +218,6 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching registrations:', error);
     res.status(500).json({ message: 'Server error fetching registrations' });
   }
 });
@@ -260,7 +256,6 @@ router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) =
     });
 
   } catch (error) {
-    console.error('Error updating registration:', error);
     res.status(500).json({ message: 'Server error updating registration' });
   }
 });

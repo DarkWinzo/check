@@ -63,7 +63,6 @@ const Layout = ({ children }) => {
         const parsed = JSON.parse(savedNotifications)
         setNotifications(Array.isArray(parsed) ? parsed : [])
       } catch (error) {
-        console.error('Error loading notifications:', error)
         setNotifications([])
       }
     } else {
@@ -96,7 +95,7 @@ const Layout = ({ children }) => {
       type
     }
     setNotifications(prev => {
-      const updated = [newNotification, ...prev.slice(0, 9)] // Keep only 10 notifications
+      const updated = [newNotification, ...prev.slice(0, 9)]
       localStorage.setItem('notifications', JSON.stringify(updated))
       return updated
     })
@@ -138,7 +137,6 @@ const Layout = ({ children }) => {
 
     try {
       setProfileLoading(true)
-      // Simulate password update with proper validation
       await new Promise(resolve => setTimeout(resolve, 1500))
       toast.success('Password updated successfully!')
       triggerNotification('Password Updated', 'Your password has been successfully changed', 'success')

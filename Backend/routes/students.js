@@ -77,7 +77,6 @@ router.post('/', authenticateToken, requireRole(['admin']), [
     }
 
   } catch (error) {
-    console.error('Error creating student:', error);
     res.status(500).json({ message: 'Server error creating student' });
   }
 });
@@ -139,7 +138,6 @@ router.get('/', authenticateToken, requireRole(['admin']), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching students:', error);
     res.status(500).json({ 
       message: 'Server error fetching students',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -207,7 +205,6 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     res.json(student);
   } catch (error) {
-    console.error('Error fetching student:', error);
     res.status(500).json({ message: 'Server error fetching student' });
   }
 });
@@ -282,7 +279,6 @@ router.put('/:id', authenticateToken, [
     });
 
   } catch (error) {
-    console.error('Error updating student:', error);
     res.status(500).json({ message: 'Server error updating student' });
   }
 });
@@ -328,7 +324,6 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
       order: [['registration_date', 'DESC']]
     });
 
-    console.log(`Found ${registrations ? registrations.length : 0} registrations for student ${studentId}`);
     res.json({
       success: true,
       data: registrations || [],
@@ -336,7 +331,6 @@ router.get('/:id/registrations', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error fetching student registrations:', error);
     res.json({ 
       success: true,
       message: 'No registrations found', 
@@ -428,7 +422,6 @@ router.post('/:id/enroll', authenticateToken, requireRole(['admin']), async (req
       throw error;
     }
   } catch (error) {
-    console.error('Error enrolling student in courses:', error);
     res.status(500).json({ message: 'Server error during enrollment' });
   }
 });
@@ -481,7 +474,6 @@ router.post('/:id/unenroll', authenticateToken, requireRole(['admin']), async (r
     });
 
   } catch (error) {
-    console.error('Error unenrolling student from courses:', error);
     res.status(500).json({ message: 'Server error during unenrollment' });
   }
 });
@@ -503,7 +495,6 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
     });
 
   } catch (error) {
-    console.error('Error deleting student:', error);
     res.status(500).json({ message: 'Server error deleting student' });
   }
 });

@@ -45,6 +45,8 @@ export const User = DATABASE.define('User', {
         allowNull: false
     },
     updatedAt: 'updated_at'
+}
+)
 
 export const Student = DATABASE.define('Student', {
     id: {
