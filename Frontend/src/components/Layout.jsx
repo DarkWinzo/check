@@ -56,7 +56,6 @@ const Layout = ({ children }) => {
   })
   const [notifications, setNotifications] = useState([])
 
-  // Load notifications from localStorage on mount
   React.useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications')
     if (savedNotifications) {
@@ -68,7 +67,6 @@ const Layout = ({ children }) => {
         setNotifications([])
       }
     } else {
-      // Initialize with welcome notification for new users
       const welcomeNotification = {
         id: Date.now(),
         title: 'Welcome to EduFlow Pro',
@@ -82,14 +80,12 @@ const Layout = ({ children }) => {
     }
   }, [user])
 
-  // Save notifications to localStorage when they change
   React.useEffect(() => {
     if (notifications.length > 0) {
       localStorage.setItem('notifications', JSON.stringify(notifications))
     }
   }, [notifications])
 
-  // Add new notification function
   const addNotification = (title, message, type = 'info') => {
     const newNotification = {
       id: Date.now(),
@@ -106,7 +102,6 @@ const Layout = ({ children }) => {
     })
   }
 
-  // Listen for system events to create notifications
   React.useEffect(() => {
     const handleSystemEvent = (event) => {
       if (event.detail) {
@@ -118,7 +113,6 @@ const Layout = ({ children }) => {
     return () => window.removeEventListener('systemNotification', handleSystemEvent)
   }, [])
 
-  // Function to trigger system notifications
   const triggerNotification = (title, message, type = 'info') => {
     const event = new CustomEvent('systemNotification', {
       detail: { title, message, type }
@@ -161,7 +155,6 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to sign out?')) {
-      // Clear notifications on logout
       localStorage.removeItem('notifications')
       setNotifications([])
       setShowProfileMenu(false)
@@ -246,7 +239,6 @@ const Layout = ({ children }) => {
             onClick={() => setShowProfileModal(false)}
           />
           <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
-            {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
@@ -266,7 +258,6 @@ const Layout = ({ children }) => {
             </div>
             
             <div className="p-8">
-              {/* User Info Section */}
               <div className="mb-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl">
                 <div className="flex items-center space-x-4 mb-4">
                   <div className="h-16 w-16 rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
@@ -285,7 +276,6 @@ const Layout = ({ children }) => {
                 </div>
               </div>
 
-              {/* Settings Tabs */}
               <div className="space-y-6">
                 <h5 className="text-lg font-bold text-gray-900 flex items-center">
                   <Lock className="h-5 w-5 mr-2 text-gray-600" />
@@ -339,7 +329,6 @@ const Layout = ({ children }) => {
                   />
                 </div>
                 
-                {/* Password Strength Indicator */}
                 {profileData.newPassword && (
                   <div className="space-y-2">
                     <div className="text-xs text-gray-600">Password Strength:</div>
@@ -359,7 +348,6 @@ const Layout = ({ children }) => {
                 )}
               </div>
               
-              {/* Additional Settings */}
               <div className="space-y-4 pt-6 border-t border-gray-200">
                 <h5 className="text-lg font-bold text-gray-900 flex items-center">
                   <Palette className="h-5 w-5 mr-2 text-gray-600" />
@@ -439,7 +427,6 @@ const Layout = ({ children }) => {
             onClick={() => setShowSupportModal(false)}
           />
           <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
-            {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl shadow-lg">
@@ -460,7 +447,6 @@ const Layout = ({ children }) => {
             
             <div className="p-8">
               <div className="space-y-8">
-                {/* Welcome Section */}
                 <div className="text-center">
                   <div className="relative inline-block mb-6">
                     <div className="absolute -inset-2 bg-gradient-to-r from-green-400 to-blue-500 rounded-full opacity-20 animate-pulse"></div>
@@ -472,9 +458,7 @@ const Layout = ({ children }) => {
                   <p className="text-gray-600 mb-8 text-lg">We're here to assist you with any questions or issues you might have.</p>
                 </div>
                 
-                {/* Support Options */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Email Support */}
                   <a
                     href="mailto:taskflowt@gmail.com?subject=Student Registration System - Support Request"
                     className="group relative p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -494,7 +478,6 @@ const Layout = ({ children }) => {
                     </div>
                   </a>
                   
-                  {/* Live Chat */}
                   <button className="group relative p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                     <div className="absolute top-4 right-4">
                       <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
@@ -511,7 +494,6 @@ const Layout = ({ children }) => {
                     </div>
                   </button>
                   
-                  {/* Knowledge Base */}
                   <button className="group relative p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl shadow-lg">
@@ -525,7 +507,6 @@ const Layout = ({ children }) => {
                     </div>
                   </button>
                   
-                  {/* GitHub Repository */}
                   <a
                     href="https://github.com/your-repo"
                     target="_blank"
@@ -548,7 +529,6 @@ const Layout = ({ children }) => {
                   </a>
                 </div>
                 
-                {/* FAQ Section */}
                 <div className="space-y-4">
                   <h5 className="text-lg font-bold text-gray-900">Frequently Asked Questions</h5>
                   <div className="space-y-3">
@@ -599,7 +579,6 @@ const Layout = ({ children }) => {
             onClick={() => setShowNotifications(false)}
           />
           <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
-            {/* Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
               <div className="flex items-center space-x-4">
                 <div className="relative">
@@ -625,7 +604,6 @@ const Layout = ({ children }) => {
               </button>
             </div>
             
-            {/* Notifications List */}
             <div className="p-6 max-h-96 overflow-y-auto">
               {notifications.length === 0 ? (
                 <div className="text-center py-8">
@@ -685,7 +663,6 @@ const Layout = ({ children }) => {
               )}
             </div>
             
-            {/* Footer */}
             <div className="flex items-center justify-between p-6 border-t border-gray-200 bg-gray-50 space-x-3">
               {notifications.length > 0 && (
                 <>
@@ -718,7 +695,6 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-[70] lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-white shadow-xl">
@@ -780,7 +756,6 @@ const Layout = ({ children }) => {
         </div>
       </div>
 
-      {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
         <div className="flex flex-col flex-grow glass-card border-r border-gray-200/50">
           <div className="flex items-center h-16 px-4 border-b">
@@ -823,7 +798,6 @@ const Layout = ({ children }) => {
           </nav>
           <div className="border-t border-gray-200/50 p-6">
             <div className="relative">
-              {/* Notifications Button */}
               <div className="mb-4">
                 <button
                   onClick={() => setShowNotifications(true)}
@@ -875,7 +849,6 @@ const Layout = ({ children }) => {
                 </div>
               </button>
 
-              {/* Profile dropdown */}
               {showProfileMenu && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[80] overflow-hidden animate-fade-in">
                   <div className="p-2">
@@ -927,9 +900,7 @@ const Layout = ({ children }) => {
         </div>
       </div>
 
-      {/* Main content */}
       <div className="lg:pl-72">
-        {/* Mobile header */}
         <div className="lg:hidden">
           <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
             <button
@@ -958,7 +929,6 @@ const Layout = ({ children }) => {
           </div>
         </div>
 
-        {/* Page content */}
         <main className="flex-1">
           <div className="p-6 lg:p-8">
             {children}
@@ -966,12 +936,10 @@ const Layout = ({ children }) => {
         </main>
       </div>
 
-      {/* Modals */}
       <ProfileModal />
       <SupportModal />
       <NotificationModal />
 
-      {/* Click outside handler for profile menu */}
       {showProfileMenu && (
         <div
           className="fixed inset-0 z-[60]"

@@ -1,408 +1,101 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { body, validationResult } from 'express-validator';
+import { User, Student } from '../config/database.js';
+import { authenticateToken } from '../middleware/auth.js';
+import config from '../config/config.js';
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-}
+const router = express.Router();
 
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center rounded-2xl text-sm font-bold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background shadow-lg hover:shadow-2xl active:scale-95 transform hover:-translate-y-1;
-  }
-  
-  .btn-primary {
-    @apply bg-gradient-to-r from-primary-600 via-purple-600 to-primary-700 text-white hover:from-primary-700 hover:via-purple-700 hover:to-primary-800 shadow-xl hover:shadow-2xl h-12 py-3 px-8 border border-transparent backdrop-blur-sm;
-  }
-  
-  .btn-secondary {
-    @apply bg-white/90 text-gray-900 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-lg hover:shadow-xl h-12 py-3 px-8 backdrop-blur-xl;
-  }
-  
-  .btn-outline {
-    @apply border border-gray-300 bg-white/90 backdrop-blur-xl hover:bg-gray-50 hover:border-gray-400 shadow-lg hover:shadow-xl h-12 py-3 px-8 text-gray-700 hover:text-gray-900;
-  }
-  
-  .input {
-    @apply flex h-14 w-full rounded-2xl border border-gray-200 bg-white/90 backdrop-blur-sm px-5 py-4 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:border-primary-300 disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-300 shadow-lg hover:shadow-xl focus:shadow-2xl;
-  }
-  
-  .card {
-    @apply rounded-3xl border border-gray-200 bg-white/90 text-gray-950 shadow-xl hover:shadow-2xl transition-all duration-500 backdrop-blur-xl hover:-translate-y-1;
-  }
-  
-  .card-header {
-    @apply flex flex-col space-y-2 p-10 pb-8;
-  }
-  
-  .card-content {
-    @apply p-10 pt-0;
-  }
-  
-  .table {
-    @apply w-full caption-bottom text-sm;
-  }
-  
-  .table-header {
-    @apply border-b border-gray-200;
-  }
-  
-  .table-row {
-    @apply border-b border-gray-100 transition-all duration-300 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 data-[state=selected]:bg-blue-50 hover:shadow-lg;
-  }
-  
-  .table-head {
-    @apply h-16 px-8 text-left align-middle font-black text-gray-800 text-xs uppercase tracking-wider bg-gradient-to-r from-gray-50 to-gray-100;
-  }
-  
-  .table-cell {
-    @apply p-8 align-middle text-sm;
-  }
+router.post('/login', [
+  body('email').isEmail().normalizeEmail(),
+  body('password').isLength({ min: 1 })
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
 
-  .glass-card {
-    @apply bg-white/95 backdrop-blur-2xl border border-white/50 shadow-2xl transition-all duration-500 hover:-translate-y-1;
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      config.JWT_SECRET,
+      { expiresIn: config.JWT_EXPIRES_IN }
+    );
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error during login' });
   }
+});
 
-  .gradient-text {
-    @apply bg-gradient-to-r from-primary-600 via-purple-600 to-pink-600 bg-clip-text text-transparent font-black;
+router.get('/verify', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'email', 'role']
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({ message: 'Server error during verification' });
   }
+});
 
-  .status-badge {
-    @apply inline-flex items-center px-4 py-2 rounded-full text-xs font-bold border shadow-lg;
+router.get('/profile', authenticateToken, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'email', 'role'],
+      include: req.user.role === 'student' ? [{
+        model: Student,
+        attributes: ['student_id', 'first_name', 'last_name', 'phone']
+      }] : []
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ user });
+
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+    res.status(500).json({ message: 'Server error fetching profile' });
   }
+});
 
-  .status-active {
-    @apply bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border border-emerald-300 shadow-emerald-200;
-  }
-
-  .status-enrolled {
-    @apply bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border border-blue-300 shadow-blue-200;
-  }
-
-  .status-completed {
-    @apply bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border border-purple-300 shadow-purple-200;
-  }
-
-  .status-dropped {
-    @apply bg-gradient-to-r from-red-100 to-pink-100 text-red-800 border border-red-300 shadow-red-200;
-  }
-
-  .animate-fade-in {
-    animation: fadeIn 0.8s ease-out forwards;
-  }
-
-  .animate-slide-up {
-    animation: slideUp 0.6s ease-out forwards;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.5s ease-out forwards;
-  }
-}
-
-/* Glass card hover effect */
-.glass-card:hover {
-  box-shadow: 
-    0 50px 100px -20px rgba(0, 0, 0, 0.25), 
-    0 30px 60px -30px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 20px 40px -10px rgba(59, 130, 246, 0.15);
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #94a3b8, #64748b);
-}
-
-/* Enhanced animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9) rotate(-1deg);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) rotate(0deg);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Pulse animation */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
-}
-
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Floating animation */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-15px) rotate(1deg);
-  }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-/* Bounce enhanced */
-@keyframes bounceEnhanced {
-  0%, 20%, 53%, 80%, 100% {
-    transform: translate3d(0,0,0) scale(1);
-  }
-  40%, 43% {
-    transform: translate3d(0, -15px, 0) scale(1.1);
-  }
-  70% {
-    transform: translate3d(0, -7px, 0) scale(1.05);
-  }
-  90% {
-    transform: translate3d(0, -2px, 0) scale(1.02);
-  }
-}
-
-.animate-bounce-enhanced {
-  animation: bounceEnhanced 2s infinite;
-}
-
-/* Glow effect */
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.6), 0 0 60px rgba(147, 197, 253, 0.4);
-  }
-}
-
-.animate-glow {
-  animation: glow 2s ease-in-out infinite;
-}
-
-/* Shimmer effect */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Line clamp utilities */
-.line-clamp-1 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.line-clamp-2 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.line-clamp-3 {
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-/* Modern shadows */
-.shadow-modern {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.shadow-modern-lg {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-/* Enhanced 3D shadows */
-.shadow-3xl {
-  box-shadow: 
-    0 35px 60px -12px rgba(0, 0, 0, 0.25), 
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 10px 20px -5px rgba(59, 130, 246, 0.1);
-}
-
-.shadow-4xl {
-  box-shadow: 
-    0 50px 100px -20px rgba(0, 0, 0, 0.25), 
-    0 30px 60px -30px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 20px 40px -10px rgba(59, 130, 246, 0.15);
-}
-
-/* Glass morphism effects */
-.glass-morphism {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.glass-morphism-dark {
-  background: rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Improved focus styles */
-.focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white;
-}
-
-/* Enhanced button hover effects */
-.btn:hover {
-  transform: translateY(-2px) scale(1.02);
-}
-
-.btn:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* Gradient animations */
-@keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradientShift 3s ease infinite;
-}
-
-/* Text effects */
-.text-shadow-lg {
-  text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.text-shadow-xl {
-  text-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced transitions */
-.transition-all-300 {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.transition-all-500 {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.transition-all-700 {
-  transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Responsive modal fixes */
-@media (max-width: 768px) {
-  .fixed.inset-0.z-\\[60\\] .inline-block {
-    margin: 1rem;
-    width: calc(100% - 2rem);
-    max-width: none;
-  }
-  
-  .fixed.inset-0.z-\\[60\\] .p-8 {
-    padding: 1.5rem;
-  }
-  
-  .fixed.inset-0.z-\\[60\\] .space-y-8 {
-    gap: 1.5rem;
-  }
-}
-
-@media (max-width: 640px) {
-  .fixed.inset-0.z-\\[60\\] .inline-block {
-    margin: 0.5rem;
-    width: calc(100% - 1rem);
-  }
-  
-  .fixed.inset-0.z-\\[60\\] .p-8 {
-    padding: 1rem;
-  }
-  
-  .fixed.inset-0.z-\\[60\\] .text-2xl {
-    font-size: 1.5rem;
-  }
-  
-  .fixed.inset-0.z-\\[60\\] .grid-cols-2 {
-    grid-template-columns: 1fr;
-  }
-}
+export default router;

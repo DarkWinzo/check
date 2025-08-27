@@ -74,11 +74,10 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData()
     
-    // Set up auto-refresh every 30 seconds
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true) // Silent refresh
+        fetchDashboardData(true)
       }, 30000)
     }
     
@@ -95,7 +94,6 @@ const Dashboard = () => {
         setLoading(true)
       }
       
-      // Fetch real data with higher limits to get actual data
       const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
         studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
         coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
@@ -115,11 +113,9 @@ const Dashboard = () => {
         activeEnrollments: activeEnrollments
       })
 
-      // Generate analytics data based on real data
       generateRealAnalyticsData(students, courses, registrations)
       
       if (silent) {
-        // Show a subtle notification for auto-refresh
         const event = new CustomEvent('systemNotification', {
           detail: { 
             title: 'Dashboard Updated', 
@@ -143,16 +139,12 @@ const Dashboard = () => {
   }
 
   const generateRealAnalyticsData = (students, courses, registrations) => {
-    // Real enrollment trends based on registration dates
     const enrollmentTrends = generateEnrollmentTrends(registrations)
     
-    // Real course distribution based on actual courses
     const courseDistribution = generateCourseDistribution(courses, registrations)
     
-    // Real status distribution based on actual registration statuses
     const statusDistribution = generateStatusDistribution(registrations)
     
-    // Real growth data based on creation dates
     const growthData = generateGrowthData(students, courses, registrations)
 
     setAnalyticsData({
@@ -275,7 +267,6 @@ const Dashboard = () => {
         navigate('/courses')
         break
       case 'analytics':
-        // Show analytics modal or navigate to analytics page
         toast.success('Analytics feature coming soon!')
         break
       default:
@@ -290,13 +281,11 @@ const Dashboard = () => {
       onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-        {/* Auto-refresh indicator */}
         <div className="absolute top-2 right-2">
           <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
                title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
         </div>
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
             <Icon className="h-6 w-6 text-white" />
@@ -311,7 +300,6 @@ const Dashboard = () => {
           )}
         </div>
         
-        {/* Content */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-600">{title}</h3>
           <div className="text-3xl font-bold text-gray-900">
@@ -319,7 +307,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </div>
@@ -537,7 +524,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
@@ -549,7 +535,6 @@ const Dashboard = () => {
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
           
-          {/* Auto-refresh status */}
           <div className="mt-4 flex items-center justify-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} />
             <span className="text-sm text-gray-500">
@@ -564,7 +549,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
@@ -608,9 +592,7 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Analytics Section */}
         <div className="space-y-6">
-          {/* Analytics Navigation */}
           <div className="flex flex-wrap gap-3 justify-center">
             {[
               { id: 'enrollment', label: 'Enrollment Analytics', icon: BarChart3, color: 'blue' },
@@ -622,7 +604,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  // Trigger a subtle refresh when switching analytics
                   fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
@@ -640,7 +621,6 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Analytics Content */}
           <AnalyticsCard
             title={
               selectedAnalytic === 'enrollment' ? 'Course Enrollment Analytics' :
@@ -665,7 +645,6 @@ const Dashboard = () => {
           </AnalyticsCard>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { 
@@ -712,7 +691,6 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* System Status */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
