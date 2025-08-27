@@ -101,40 +101,72 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    const student = await Student.findOne({
-      where: { user_id: userId }
-    });
-
-    if (!student) {
-      return res.status(404).json({ message: 'Student profile not found' });
-    }
-
-    const studentId = student.id;
-    const whereClause = { id };
-
+    // Allow both students and admins to delete registrations
+    let whereClause = { id };
+    
+    // If user is a student, ensure they can only delete their own registrations
     if (req.user.role === 'student') {
-      whereClause.student_id = studentId;
+      const student = await Student.findOne({
+        where: { user_id: userId }
+      });
+
+      if (!student) {
+        return res.status(404).json({ message: 'Student profile not found' });
+      }
+
+      whereClause.student_id = student.id;
     }
 
     const registration = await Registration.findOne({
-      where: whereClause
+      where: whereClause,
+      include: [{
+        model: Student,
+        attributes: ['first_name', 'last_name', 'student_id']
+      }, {
+        model: Course,
+        attributes: ['course_name', 'course_code']
+      }]
     });
 
     if (!registration) {
       return res.status(404).json({ message: 'Registration not found or access denied' });
     }
 
-    await Registration.update(
-      { status: 'dropped' },
-      { where: { id } }
-    );
+    // For admin users, allow complete deletion
+    // For students, just update status to 'dropped'
+    if (req.user.role === 'admin') {
+      await Registration.destroy({ where: { id } });
+      
+      res.json({
+        message: 'Registration deleted successfully',
+        registration: {
+          id: registration.id,
+          student: registration.Student,
+          course: registration.Course,
+          status: 'deleted'
+        }
+      });
+    } else {
+      await Registration.update(
+        { status: 'dropped' },
+        { where: { id } }
+      );
 
-    const updatedRegistration = await Registration.findByPk(id);
+      const updatedRegistration = await Registration.findByPk(id, {
+        include: [{
+          model: Student,
+          attributes: ['first_name', 'last_name', 'student_id']
+        }, {
+          model: Course,
+          attributes: ['course_name', 'course_code']
+        }]
+      });
 
-    res.json({
-      message: 'Successfully dropped course',
-      registration: updatedRegistration
-    });
+      res.json({
+        message: 'Successfully dropped course',
+        registration: updatedRegistration
+      });
+    }
 
   } catch (error) {
     console.error('Error dropping course:', error);
