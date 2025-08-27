@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import { 
@@ -52,6 +53,7 @@ import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCourses: 0,
@@ -513,7 +515,7 @@ const Dashboard = () => {
         </div>
 
         {/* Analytics Section */}
-        <div className="space-y-6">
+        <div className="space-y-6" data-analytics-section>
           {/* Analytics Navigation */}
           <div className="flex flex-wrap gap-3 justify-center">
             {[
@@ -573,24 +575,37 @@ const Dashboard = () => {
               description: 'Manage student profiles and enrollments',
               icon: UserCheck,
               color: 'from-blue-500 to-blue-600',
-              href: '/students'
+              href: '/students',
+              onClick: () => navigate('/students')
             },
             { 
               title: 'Course Management', 
               description: 'Create and manage course offerings',
               icon: BookMarked,
               color: 'from-green-500 to-green-600',
-              href: '/courses'
+              href: '/courses',
+              onClick: () => navigate('/courses')
             },
             { 
               title: 'Analytics Reports', 
               description: 'View detailed analytics and reports',
               icon: Trophy,
               color: 'from-purple-500 to-purple-600',
-              href: '#'
+              href: '#',
+              onClick: () => {
+                // Scroll to analytics section
+                const analyticsSection = document.querySelector('[data-analytics-section]')
+                if (analyticsSection) {
+                  analyticsSection.scrollIntoView({ behavior: 'smooth' })
+                }
+              }
             }
           ].map((action, index) => (
-            <div key={index} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div 
+              key={index} 
+              className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
+              onClick={action.onClick}
+            >
               <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
                 <action.icon className="h-6 w-6 text-white" />
               </div>
@@ -598,10 +613,10 @@ const Dashboard = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-2">{action.title}</h3>
               <p className="text-gray-600 mb-4">{action.description}</p>
               
-              <button className="flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200">
-                <span>Learn More</span>
+              <div className="flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200">
+                <span>{action.title === 'Analytics Reports' ? 'View Analytics' : 'Go to ' + action.title}</span>
                 <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
-              </button>
+              </div>
             </div>
           ))}
         </div>

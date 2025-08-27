@@ -162,9 +162,14 @@ const Layout = ({ children }) => {
     // Clear notifications on logout
     localStorage.removeItem('notifications')
     setNotifications([])
-    logout()
-    navigate('/login')
-    toast.success('Signed out successfully')
+    try {
+      logout()
+      toast.success('Signed out successfully')
+      navigate('/login', { replace: true })
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Error signing out')
+    }
   }
 
   const markNotificationAsRead = (id) => {
@@ -489,6 +494,9 @@ const Layout = ({ children }) => {
                   
                   {/* Live Chat */}
                   <button className="group relative p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    onClick={() => {
+                      toast.success('Live chat feature coming soon!')
+                    }}
                     <div className="absolute top-4 right-4">
                       <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                     </div>
@@ -506,6 +514,9 @@ const Layout = ({ children }) => {
                   
                   {/* Knowledge Base */}
                   <button className="group relative p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                    onClick={() => {
+                      toast.info('Knowledge base is being prepared!')
+                    }}
                     <div className="flex items-center space-x-4">
                       <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl shadow-lg">
                         <FileText className="h-6 w-6 text-white" />
@@ -520,7 +531,7 @@ const Layout = ({ children }) => {
                   
                   {/* GitHub Repository */}
                   <a
-                    href="https://github.com/your-repo"
+                    href="https://github.com/DarkSideDevs/student-registration-system"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="group relative p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
@@ -901,8 +912,8 @@ const Layout = ({ children }) => {
                     <div className="border-t border-gray-200 my-3 mx-2"></div>
                     <button
                       onClick={() => {
-                        handleLogout()
                         setShowProfileMenu(false)
+                        handleLogout()
                       }}
                       className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
                     >

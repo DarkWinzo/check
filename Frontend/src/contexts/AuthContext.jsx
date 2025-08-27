@@ -58,8 +58,16 @@ export const AuthProvider = ({ children }) => {
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
-    setUser(null)
+    try {
+      localStorage.removeItem('token')
+      setUser(null)
+      // Clear any other stored data
+      localStorage.removeItem('notifications')
+    } catch (error) {
+      console.error('Error during logout:', error)
+      // Still proceed with logout even if there's an error
+      setUser(null)
+    }
   }
 
   const value = {
