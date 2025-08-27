@@ -141,7 +141,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     }
 
     try {
-      await studentsAPI.unenrollFromCourses(student.id, [registrationId])
+      await registrationsAPI.delete(registrationId)
       toast.success('Course dropped successfully')
       fetchStudentRegistrations()
     } catch (error) {
@@ -507,14 +507,14 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                               }`}>
                                 {registration.status}
                               </span>
-                              {mode === 'edit' && registration.status === 'enrolled' && (
+                              {(mode === 'edit' || isEditing) && registration.status === 'enrolled' && (
                                 <button
                                   type="button"
                                   onClick={() => handleUnenrollFromCourse(registration.id)}
-                                  className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-all duration-200"
+                                  className="opacity-0 group-hover:opacity-100 p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110"
                                   title="Drop Course"
                                 >
-                                  <X className="h-3 w-3" />
+                                  <X className="h-4 w-4" />
                                 </button>
                               )}
                             </div>
@@ -526,7 +526,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                         <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-sm text-gray-500">No course registrations found</p>
                         <p className="text-xs text-gray-400 mt-1">This student is not currently enrolled in any courses</p>
-                        {mode === 'edit' && (
+                        {(mode === 'edit' || isEditing) && (
                           <button
                             type="button"
                             onClick={() => setShowCourseSelection(true)}
@@ -556,7 +556,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               )}
               
               {/* Course Selection Modal for Edit Mode */}
-              {showCourseSelection && (
+              {(mode === 'edit' || isEditing) && studentRegistrations.length > 0 && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                     <div className="flex items-center justify-between mb-4">
