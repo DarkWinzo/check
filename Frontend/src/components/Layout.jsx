@@ -239,17 +239,17 @@ const Layout = ({ children }) => {
     if (!showProfileModal) return null
 
     return (
-      <div className="fixed inset-0 z-[70] overflow-y-auto">
+      <div className="fixed inset-0 z-[100] overflow-y-auto animate-fade-in">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowProfileModal(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[101] animate-bounce-in">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg animate-pulse">
                   <UserCog className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -259,7 +259,7 @@ const Layout = ({ children }) => {
               </div>
               <button
                 onClick={() => setShowProfileModal(false)}
-                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -432,17 +432,17 @@ const Layout = ({ children }) => {
     if (!showSupportModal) return null
 
     return (
-      <div className="fixed inset-0 z-[70] overflow-y-auto">
+      <div className="fixed inset-0 z-[100] overflow-y-auto animate-fade-in">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowSupportModal(false)}
           />
-          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
+          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[101] animate-bounce-in">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl shadow-lg">
+                <div className="p-3 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl shadow-lg animate-pulse">
                   <HelpCircle className="h-6 w-6 text-white" />
                 </div>
                 <div>
@@ -452,7 +452,7 @@ const Layout = ({ children }) => {
               </div>
               <button
                 onClick={() => setShowSupportModal(false)}
-                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -477,13 +477,13 @@ const Layout = ({ children }) => {
                   {/* Email Support */}
                   <a
                     href="mailto:taskflowt@gmail.com?subject=Student Registration System - Support Request"
-                    className="group relative p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="group relative p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl hover:from-blue-100 hover:to-blue-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl active:scale-95"
                   >
                     <div className="absolute top-4 right-4">
                       <ExternalLink className="h-4 w-4 text-blue-400 group-hover:text-blue-600 transition-colors duration-200" />
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl shadow-lg group-hover:animate-pulse">
                         <Mail className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -495,12 +495,12 @@ const Layout = ({ children }) => {
                   </a>
                   
                   {/* Live Chat */}
-                  <button className="group relative p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                  <button className="group relative p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-2xl hover:from-green-100 hover:to-green-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl active:scale-95">
                     <div className="absolute top-4 right-4">
                       <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-green-500 to-green-600 rounded-2xl shadow-lg group-hover:animate-pulse">
                         <MessageCircle className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -512,9 +512,9 @@ const Layout = ({ children }) => {
                   </button>
                   
                   {/* Knowledge Base */}
-                  <button className="group relative p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                  <button className="group relative p-6 bg-gradient-to-r from-purple-50 to-purple-100 rounded-2xl hover:from-purple-100 hover:to-purple-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl active:scale-95">
                     <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl shadow-lg group-hover:animate-pulse">
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -530,13 +530,13 @@ const Layout = ({ children }) => {
                     href="https://github.com/your-repo"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group relative p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                    className="group relative p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl hover:from-gray-100 hover:to-gray-200 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl active:scale-95"
                   >
                     <div className="absolute top-4 right-4">
                       <ExternalLink className="h-4 w-4 text-gray-400 group-hover:text-gray-600 transition-colors duration-200" />
                     </div>
                     <div className="flex items-center space-x-4">
-                      <div className="p-3 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl shadow-lg">
+                      <div className="p-3 bg-gradient-to-r from-gray-700 to-gray-800 rounded-2xl shadow-lg group-hover:animate-pulse">
                         <Github className="h-6 w-6 text-white" />
                       </div>
                       <div>
@@ -592,18 +592,18 @@ const Layout = ({ children }) => {
     if (!showNotifications) return null
 
     return (
-      <div className="fixed inset-0 z-[70] overflow-y-auto">
+      <div className="fixed inset-0 z-[100] overflow-y-auto animate-fade-in">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowNotifications(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[101] animate-bounce-in">
             {/* Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl shadow-lg">
+                  <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl shadow-lg animate-pulse">
                     <Bell className="h-6 w-6 text-white" />
                   </div>
                   {unreadCount > 0 && (
@@ -619,7 +619,7 @@ const Layout = ({ children }) => {
               </div>
               <button
                 onClick={() => setShowNotifications(false)}
-                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="p-3 text-gray-400 hover:text-gray-600 hover:bg-white rounded-2xl transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -640,7 +640,7 @@ const Layout = ({ children }) => {
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 rounded-2xl transition-all duration-200 ${
+                    className={`p-4 rounded-2xl transition-all duration-200 hover:scale-102 ${
                       notification.unread
                         ? 'bg-blue-50 border-l-4 border-blue-500 hover:bg-blue-100'
                         : 'bg-gray-50 hover:bg-gray-100'
@@ -664,7 +664,7 @@ const Layout = ({ children }) => {
                         {notification.unread && (
                           <button
                             onClick={() => markNotificationAsRead(notification.id)}
-                            className="p-1 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors duration-200"
+                            className="p-1 text-blue-600 hover:bg-blue-100 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
                             title="Mark as read"
                           >
                             <Eye className="h-3 w-3" />
@@ -672,8 +672,8 @@ const Layout = ({ children }) => {
                         )}
                         <button
                           onClick={() => deleteNotification(notification.id)}
-                          className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-colors duration-200"
-                          title="Delete notification"
+                          className="p-1 text-red-600 hover:bg-red-100 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                  <details key={index} className="group bg-gray-50 rounded-2xl p-4 hover:bg-gray-100 transition-all duration-200 hover:shadow-md">
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -691,13 +691,13 @@ const Layout = ({ children }) => {
                 <>
               <button
                 onClick={markAllAsRead}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Mark all as read
               </button>
               <button
                 onClick={clearAllNotifications}
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
+                className="text-sm text-red-600 hover:text-red-700 font-medium transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 Clear all
               </button>
@@ -705,7 +705,7 @@ const Layout = ({ children }) => {
               )}
               <button
                 onClick={() => setShowNotifications(false)}
-                className="btn btn-primary px-6 py-3"
+                className="btn btn-primary px-6 py-3 hover:scale-105 active:scale-95"
               >
                 Close
               </button>
@@ -803,7 +803,7 @@ const Layout = ({ children }) => {
                   key={item.name}
                   to={item.href}
                   className={`flex items-center px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 group ${
-                    isActive
+            className="btn btn-primary px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 hover:scale-105 active:scale-95"
                       ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-2xl transform scale-105'
                       : 'text-gray-600 hover:bg-gradient-to-r hover:from-gray-100 hover:to-gray-50 hover:text-gray-900 hover:shadow-xl hover:scale-105'
                   }`}
@@ -877,38 +877,38 @@ const Layout = ({ children }) => {
 
               {/* Profile dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[80] overflow-hidden animate-fade-in">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[90] overflow-hidden animate-slide-up">
                   <div className="p-2">
                     <button
                       onClick={() => {
                         setShowProfileModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer"
                     >
                       <div className="p-2 bg-blue-100 rounded-xl mr-3">
                         <Settings className="h-4 w-4 text-blue-600" />
                       </div>
                       Profile Settings
-                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
+                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400 transition-transform duration-200 group-hover:translate-x-1" />
                     </button>
                     <button
                       onClick={() => {
                         setShowSupportModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer group"
                     >
                       <div className="p-2 bg-green-100 rounded-xl mr-3">
                         <Heart className="h-4 w-4 text-green-600" />
                       </div>
                       Help & Support
-                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
+                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400 transition-transform duration-200 group-hover:translate-x-1" />
                     </button>
                     <div className="border-t border-gray-200 my-3 mx-2"></div>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md active:scale-95 cursor-pointer group"
                     >
                       <div className="p-2 bg-red-100 rounded-xl mr-3">
                         <LogOut className="h-4 w-4 text-red-600" />
@@ -916,7 +916,7 @@ const Layout = ({ children }) => {
                       Sign out
                       <div className="ml-auto flex items-center space-x-1">
                         <Shield className="h-3 w-3 text-red-400" />
-                        <span className="text-xs text-red-500">Secure</span>
+                        <span className="text-xs text-red-500 transition-all duration-200 group-hover:text-red-600">Secure</span>
                       </div>
                     </button>
                   </div>
@@ -974,7 +974,7 @@ const Layout = ({ children }) => {
       {/* Click outside handler for profile menu */}
       {showProfileMenu && (
         <div
-          className="fixed inset-0 z-[60]"
+          className="fixed inset-0 z-[85]"
           onClick={() => setShowProfileMenu(false)}
         />
       )}
