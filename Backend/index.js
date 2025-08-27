@@ -34,7 +34,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Rate limite
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100
@@ -44,7 +43,6 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/courses', courseRoutes);
@@ -61,12 +59,10 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 error
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// startt
 async function startServer() {
   try {
     await initializeDatabase();

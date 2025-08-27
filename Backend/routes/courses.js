@@ -253,7 +253,6 @@ router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res
       where: { 
         course_id: id,
         status: 'enrolled'
-      }
     });
 
     if (activeRegistrations > 0) {

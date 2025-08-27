@@ -101,10 +101,8 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
-    // Allow both students and admins to delete registrations
     let whereClause = { id };
     
-    // If user is a student, ensure they can only delete their own registrations
     if (req.user.role === 'student') {
       const student = await Student.findOne({
         where: { user_id: userId }
@@ -132,8 +130,6 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Registration not found or access denied' });
     }
 
-    // For admin users, allow complete deletion
-    // For students, just update status to 'dropped'
     if (req.user.role === 'admin') {
       await Registration.destroy({ where: { id } });
       

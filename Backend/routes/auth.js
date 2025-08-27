@@ -30,7 +30,6 @@ router.post('/login', [
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       config.JWT_SECRET,
@@ -49,7 +48,6 @@ router.post('/login', [
   }
 });
 
-//user profile
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
     res.json(req.user);
@@ -60,7 +58,6 @@ router.get('/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// Verify token
 router.get('/verify', authenticateToken, (req, res) => {
   res.json({ valid: true, user: req.user });
 });
