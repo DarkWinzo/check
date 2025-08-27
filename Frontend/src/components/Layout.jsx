@@ -46,6 +46,7 @@ const Layout = ({ children }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileData, setProfileData] = useState({
@@ -54,7 +55,6 @@ const Layout = ({ children }) => {
     confirmPassword: ''
   })
   const [notifications, setNotifications] = useState([])
-  const [showNotifications, setShowNotifications] = useState(false)
 
   // Load notifications from localStorage on mount
   React.useEffect(() => {
@@ -165,6 +165,9 @@ const Layout = ({ children }) => {
       localStorage.removeItem('notifications')
       setNotifications([])
       setShowProfileMenu(false)
+      setShowProfileModal(false)
+      setShowSupportModal(false)
+      setShowNotifications(false)
       logout()
       navigate('/login')
       toast.success('Signed out successfully')
@@ -236,13 +239,13 @@ const Layout = ({ children }) => {
     if (!showProfileModal) return null
 
     return (
-      <div className="fixed inset-0 z-[60] overflow-y-auto">
+      <div className="fixed inset-0 z-[70] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowProfileModal(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
               <div className="flex items-center space-x-4">
@@ -429,13 +432,13 @@ const Layout = ({ children }) => {
     if (!showSupportModal) return null
 
     return (
-      <div className="fixed inset-0 z-[60] overflow-y-auto">
+      <div className="fixed inset-0 z-[70] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowSupportModal(false)}
           />
-          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
+          <div className="inline-block w-full max-w-2xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
             {/* Enhanced Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-blue-50">
               <div className="flex items-center space-x-4">
@@ -589,13 +592,13 @@ const Layout = ({ children }) => {
     if (!showNotifications) return null
 
     return (
-      <div className="fixed inset-0 z-[60] overflow-y-auto">
+      <div className="fixed inset-0 z-[70] overflow-y-auto">
         <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
           <div 
             className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
             onClick={() => setShowNotifications(false)}
           />
-          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-10">
+          <div className="inline-block w-full max-w-lg my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-3xl border border-gray-100 relative z-[71]">
             {/* Header */}
             <div className="flex items-center justify-between p-8 border-b border-gray-200 bg-gradient-to-r from-yellow-50 to-orange-50">
               <div className="flex items-center space-x-4">
@@ -904,10 +907,7 @@ const Layout = ({ children }) => {
                     </button>
                     <div className="border-t border-gray-200 my-3 mx-2"></div>
                     <button
-                      onClick={() => {
-                        handleLogout()
-                        setShowProfileMenu(false)
-                      }}
+                      onClick={handleLogout}
                       className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md"
                     >
                       <div className="p-2 bg-red-100 rounded-xl mr-3">
@@ -973,12 +973,10 @@ const Layout = ({ children }) => {
 
       {/* Click outside handler for profile menu */}
       {showProfileMenu && (
-        <>
-          <div
-            className="fixed inset-0 z-[75]"
-            onClick={() => setShowProfileMenu(false)}
-          />
-        </>
+        <div
+          className="fixed inset-0 z-[60]"
+          onClick={() => setShowProfileMenu(false)}
+        />
       )}
     </div>
   )
