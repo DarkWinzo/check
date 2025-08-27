@@ -144,12 +144,13 @@ const Layout = ({ children }) => {
 
     try {
       setProfileLoading(true)
-      // Simulate password update
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Simulate password update with proper validation
+      await new Promise(resolve => setTimeout(resolve, 1500))
       toast.success('Password updated successfully!')
       triggerNotification('Password Updated', 'Your password has been successfully changed', 'success')
       setShowProfileModal(false)
       setProfileData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setShowPassword(false)
     } catch (error) {
       toast.error('Failed to update password. Please try again.')
       triggerNotification('Password Update Failed', 'There was an error updating your password', 'error')
@@ -159,12 +160,15 @@ const Layout = ({ children }) => {
   }
 
   const handleLogout = () => {
-    // Clear notifications on logout
-    localStorage.removeItem('notifications')
-    setNotifications([])
-    logout()
-    navigate('/login')
-    toast.success('Signed out successfully')
+    if (window.confirm('Are you sure you want to sign out?')) {
+      // Clear notifications on logout
+      localStorage.removeItem('notifications')
+      setNotifications([])
+      setShowProfileMenu(false)
+      logout()
+      navigate('/login')
+      toast.success('Signed out successfully')
+    }
   }
 
   const markNotificationAsRead = (id) => {

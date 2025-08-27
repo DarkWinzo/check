@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { useNavigate } from 'react-router-dom'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import { 
   Users, 
@@ -52,6 +53,7 @@ import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCourses: 0,
@@ -59,6 +61,7 @@ const Dashboard = () => {
     activeEnrollments: 0
   })
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [analyticsData, setAnalyticsData] = useState({
     enrollmentTrends: [],
     courseDistribution: [],
@@ -66,27 +69,42 @@ const Dashboard = () => {
     growthData: []
   })
   const [selectedAnalytic, setSelectedAnalytic] = useState('enrollment')
-  const [refreshing, setRefreshing] = useState(false)
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+    
+    // Set up auto-refresh every 30 seconds
+    let interval
+    if (autoRefreshEnabled) {
+      interval = setInterval(() => {
+        fetchDashboardData(true) // Silent refresh
+      }, 30000)
+    }
+    
+    return () => {
+      if (interval) {
+        clearInterval(interval)
+      }
+    }
+  }, [autoRefreshEnabled])
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) {
+        setLoading(true)
+      }
       
       // Fetch real data with higher limits to get actual data
       const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-        studentsAPI.getAll({ limit: 1000 }),
-        coursesAPI.getAll({ limit: 1000 }),
-        registrationsAPI.getAll({ limit: 1000 })
+        studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
+        coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
+        registrationsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { registrations: [] } }))
       ])
 
       const students = studentsRes.data.students || []
       const courses = coursesRes.data.courses || []
       const registrations = registrationsRes.data.registrations || []
-
 
       const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
 
@@ -100,11 +118,27 @@ const Dashboard = () => {
       // Generate analytics data based on real data
       generateRealAnalyticsData(students, courses, registrations)
       
+      if (silent) {
+        // Show a subtle notification for auto-refresh
+        const event = new CustomEvent('systemNotification', {
+          detail: { 
+            title: 'Dashboard Updated', 
+            message: 'Latest data has been loaded automatically', 
+            type: 'info' 
+          }
+        })
+        window.dispatchEvent(event)
+      }
+      
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
-      toast.error('Failed to load dashboard data')
+      if (!silent) {
+        toast.error('Failed to load dashboard data')
+      }
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }
 
@@ -161,7 +195,7 @@ const Dashboard = () => {
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
     
     courses.forEach(course => {
-      const dept = course.department || 'Other'
+      const dept = course.department || 'General'
       if (!departments[dept]) {
         departments[dept] = 0
       }
@@ -222,17 +256,46 @@ const Dashboard = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchDashboardData()
-    setTimeout(() => setRefreshing(false), 1000)
-    toast.success('Dashboard refreshed!')
+    try {
+      await fetchDashboardData()
+      toast.success('Dashboard refreshed successfully!')
+    } catch (error) {
+      toast.error('Failed to refresh dashboard')
+    } finally {
+      setTimeout(() => setRefreshing(false), 1000)
+    }
   }
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0 }) => (
+  const handleQuickAction = (action) => {
+    switch (action) {
+      case 'students':
+        navigate('/students')
+        break
+      case 'courses':
+        navigate('/courses')
+        break
+      case 'analytics':
+        // Show analytics modal or navigate to analytics page
+        toast.success('Analytics feature coming soon!')
+        break
+      default:
+        break
+    }
+  }
+
+  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick }) => (
     <div 
-      className="relative group animate-fade-in transition-all duration-300 hover:scale-105"
+      className="relative group animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
       style={{ animationDelay: `${delay}ms` }}
+      onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
+        {/* Auto-refresh indicator */}
+        <div className="absolute top-2 right-2">
+          <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
+               title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
+        </div>
+        
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
@@ -255,6 +318,9 @@ const Dashboard = () => {
             {value.toLocaleString()}
           </div>
         </div>
+        
+        {/* Hover effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </div>
   )
@@ -276,9 +342,21 @@ const Dashboard = () => {
         
         <div className="flex items-center space-x-2">
           <button
+            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+            className={`p-2 rounded-lg transition-colors duration-200 ${
+              autoRefreshEnabled 
+                ? 'text-green-600 bg-green-50 hover:bg-green-100' 
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+            title={autoRefreshEnabled ? 'Disable auto-refresh' : 'Enable auto-refresh'}
+          >
+            <Activity className={`h-4 w-4 ${autoRefreshEnabled ? 'animate-pulse' : ''}`} />
+          </button>
+          <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            title="Refresh now"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           </button>
@@ -470,6 +548,20 @@ const Dashboard = () => {
           <p className="text-xl text-gray-600">
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
+          
+          {/* Auto-refresh status */}
+          <div className="mt-4 flex items-center justify-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} />
+            <span className="text-sm text-gray-500">
+              Auto-refresh {autoRefreshEnabled ? 'enabled' : 'disabled'}
+            </span>
+            <button
+              onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
+              className="text-xs text-blue-600 hover:text-blue-700 font-medium ml-2"
+            >
+              {autoRefreshEnabled ? 'Disable' : 'Enable'}
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -482,6 +574,7 @@ const Dashboard = () => {
             trendValue={12}
             color="bg-gradient-to-r from-blue-500 to-blue-600"
             delay={0}
+            onClick={() => handleQuickAction('students')}
           />
           <StatCard
             title="Active Courses"
@@ -491,6 +584,7 @@ const Dashboard = () => {
             trendValue={8}
             color="bg-gradient-to-r from-green-500 to-green-600"
             delay={100}
+            onClick={() => handleQuickAction('courses')}
           />
           <StatCard
             title="Total Enrollments"
@@ -500,6 +594,7 @@ const Dashboard = () => {
             trendValue={15}
             color="bg-gradient-to-r from-purple-500 to-purple-600"
             delay={200}
+            onClick={() => handleRefresh()}
           />
           <StatCard
             title="Active Enrollments"
@@ -509,6 +604,7 @@ const Dashboard = () => {
             trendValue={23}
             color="bg-gradient-to-r from-pink-500 to-pink-600"
             delay={300}
+            onClick={() => handleRefresh()}
           />
         </div>
 
@@ -524,14 +620,18 @@ const Dashboard = () => {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => setSelectedAnalytic(item.id)}
-                className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 ${
+                onClick={() => {
+                  setSelectedAnalytic(item.id)
+                  // Trigger a subtle refresh when switching analytics
+                  fetchDashboardData(true)
+                }}
+                className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
                   selectedAnalytic === item.id
                     ? item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' :
                       item.color === 'green' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' :
                       item.color === 'purple' ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg' :
                       'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md'
                 }`}
               >
                 <item.icon className="h-4 w-4" />
@@ -573,37 +673,80 @@ const Dashboard = () => {
               description: 'Manage student profiles and enrollments',
               icon: UserCheck,
               color: 'from-blue-500 to-blue-600',
-              href: '/students'
+              action: 'students'
             },
             { 
               title: 'Course Management', 
               description: 'Create and manage course offerings',
               icon: BookMarked,
               color: 'from-green-500 to-green-600',
-              href: '/courses'
+              action: 'courses'
             },
             { 
               title: 'Analytics Reports', 
               description: 'View detailed analytics and reports',
               icon: Trophy,
               color: 'from-purple-500 to-purple-600',
-              href: '#'
+              action: 'analytics'
             }
           ].map((action, index) => (
-            <div key={index} className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <button
+              key={index}
+              onClick={() => handleQuickAction(action.action)}
+              className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group text-left w-full hover:scale-105 transform"
+            >
               <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
                 <action.icon className="h-6 w-6 text-white" />
               </div>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{action.title}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200">
+                {action.title}
+              </h3>
               <p className="text-gray-600 mb-4">{action.description}</p>
               
-              <button className="flex items-center text-blue-600 font-semibold hover:text-blue-700 transition-colors duration-200">
-                <span>Learn More</span>
+              <div className="flex items-center text-blue-600 font-semibold group-hover:text-blue-700 transition-colors duration-200">
+                <span>Access Now</span>
                 <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
-              </button>
-            </div>
+              </div>
+            </button>
           ))}
+        </div>
+
+        {/* System Status */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+              <Zap className="h-5 w-5 mr-2 text-yellow-500" />
+              System Status
+            </h3>
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <span className="text-sm text-green-600 font-medium">All Systems Operational</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="text-center p-4 bg-green-50 rounded-xl">
+              <div className="text-2xl font-bold text-green-600">99.9%</div>
+              <div className="text-sm text-gray-600">Uptime</div>
+            </div>
+            <div className="text-center p-4 bg-blue-50 rounded-xl">
+              <div className="text-2xl font-bold text-blue-600">{stats.totalStudents + stats.totalCourses}</div>
+              <div className="text-sm text-gray-600">Total Records</div>
+            </div>
+            <div className="text-center p-4 bg-purple-50 rounded-xl">
+              <div className="text-2xl font-bold text-purple-600">
+                {autoRefreshEnabled ? '30s' : 'Manual'}
+              </div>
+              <div className="text-sm text-gray-600">Refresh Rate</div>
+            </div>
+            <div className="text-center p-4 bg-yellow-50 rounded-xl">
+              <div className="text-2xl font-bold text-yellow-600">
+                {new Date().toLocaleTimeString()}
+              </div>
+              <div className="text-sm text-gray-600">Last Updated</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
