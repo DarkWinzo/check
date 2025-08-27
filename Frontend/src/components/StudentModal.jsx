@@ -67,7 +67,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                            Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
     } catch (error) {
-      console.error('Error fetching student registrations:', error);
       setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)
@@ -125,7 +124,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error);
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         `Failed to ${mode === 'create' ? 'create' : 'update'} student. Please try again.`
@@ -145,7 +143,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       toast.success('Course dropped successfully')
       fetchStudentRegistrations()
     } catch (error) {
-      console.error('Error dropping course:', error)
       toast.error('Failed to drop course')
     }
   }
@@ -163,7 +160,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       setShowCourseSelection(false)
       fetchStudentRegistrations()
     } catch (error) {
-      console.error('Error enrolling in courses:', error)
       toast.error('Failed to enroll in courses')
     }
   }

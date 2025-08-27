@@ -40,7 +40,6 @@ const Courses = () => {
       setCourses(response.data.courses || [])
       setPagination(response.data.pagination || {})
     } catch (error) {
-      console.error('Error fetching courses:', error)
       const message = error.response?.data?.message || 'Failed to fetch courses. Please try again.'
       toast.error(message)
       setCourses([])
@@ -112,7 +111,6 @@ const Courses = () => {
       const response = await coursesAPI.getRegistrations(course.id)
       setEnrolledStudents(response.data || [])
     } catch (error) {
-      console.error('Error fetching course enrollments:', error);
       const message = error.response?.data?.message || 'Failed to fetch course enrollments'
       toast.error(message)
       setEnrolledStudents([])
