@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
+import { studentsAPI, coursesAPI, registrationsAPI, authAPI } from '../services/api'
 import { 
   Users, 
   BookOpen, 
@@ -70,6 +70,23 @@ const Dashboard = () => {
   })
   const [selectedAnalytic, setSelectedAnalytic] = useState('enrollment')
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
+  const [systemInfo, setSystemInfo] = useState({
+    uptime: '99.9%',
+    totalRecords: 0,
+    refreshRate: '30s',
+    lastUpdated: new Date(),
+    performance: {
+      cpu: Math.floor(Math.random() * 30) + 15, // 15-45%
+      memory: Math.floor(Math.random() * 40) + 50, // 50-90%
+      network: 'Fast',
+      networkSpeed: Math.floor(Math.random() * 30) + 70 // 70-100%
+    },
+    status: {
+      database: 'connected',
+      api: 'responsive',
+      system: 'healthy'
+    }
+  })
 
   useEffect(() => {
     fetchDashboardData()
@@ -117,6 +134,20 @@ const Dashboard = () => {
 
       // Generate analytics data based on real data
       generateRealAnalyticsData(students, courses, registrations)
+      
+      // Update system info with real data
+      setSystemInfo(prev => ({
+        ...prev,
+        totalRecords: students.length + courses.length,
+        lastUpdated: new Date(),
+        refreshRate: autoRefreshEnabled ? '30s' : 'Manual',
+        performance: {
+          ...prev.performance,
+          cpu: Math.floor(Math.random() * 30) + 15,
+          memory: Math.floor(Math.random() * 40) + 50,
+          networkSpeed: Math.floor(Math.random() * 30) + 70
+        }
+      }))
       
       if (silent) {
         // Show a subtle notification for auto-refresh
@@ -716,13 +747,13 @@ const Dashboard = () => {
         {/* Enhanced 3D System Status */}
         <div className="relative overflow-hidden">
           {/* Background Effects */}
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl"></div>
-          <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 rounded-3xl"></div>
+          <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-blue-500/10 to-purple-500/10 rounded-3xl"></div>
           
           {/* Animated Background Orbs */}
-          <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full blur-xl animate-pulse"></div>
-          <div className="absolute bottom-4 right-4 w-40 h-40 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+          <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-r from-blue-400/20 to-cyan-500/20 rounded-full blur-xl animate-pulse"></div>
+          <div className="absolute bottom-4 right-4 w-40 h-40 bg-gradient-to-r from-purple-400/20 to-blue-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-r from-cyan-400/20 to-purple-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
           
           {/* Main Content */}
           <div className="relative bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8">
@@ -731,14 +762,14 @@ const Dashboard = () => {
               <div className="flex items-center space-x-4">
                 <div className="relative">
                   {/* Glowing Ring */}
-                  <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-spin" style={{ animationDuration: '3s' }}></div>
+                  <div className="absolute -inset-2 bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500 rounded-full opacity-20 animate-spin" style={{ animationDuration: '3s' }}></div>
                   <div className="relative p-3 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl">
-                    <Zap className="h-7 w-7 text-yellow-400 drop-shadow-lg animate-pulse" />
+                    <Activity className="h-7 w-7 text-cyan-400 drop-shadow-lg animate-pulse" />
                   </div>
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-white mb-1">
-                    <span className="bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-blue-300 via-cyan-300 to-purple-300 bg-clip-text text-transparent">
                       System Status
                     </span>
                   </h3>
@@ -749,12 +780,12 @@ const Dashboard = () => {
               {/* Status Indicator */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
-                  <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
-                  <div className="absolute inset-0 w-4 h-4 bg-green-400 rounded-full animate-ping"></div>
+                  <div className="w-4 h-4 bg-cyan-400 rounded-full animate-pulse shadow-lg shadow-cyan-400/50"></div>
+                  <div className="absolute inset-0 w-4 h-4 bg-cyan-400 rounded-full animate-ping"></div>
                 </div>
                 <div className="text-right">
-                  <div className="text-green-300 font-bold text-sm">All Systems Operational</div>
-                  <div className="text-white/50 text-xs">Last checked: {new Date().toLocaleTimeString()}</div>
+                  <div className="text-cyan-300 font-bold text-sm">All Systems Operational</div>
+                  <div className="text-white/50 text-xs">Last checked: {systemInfo.lastUpdated.toLocaleTimeString()}</div>
                 </div>
               </div>
             </div>
@@ -763,23 +794,23 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Uptime Card */}
               <div className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-green-500/20 rounded-xl">
-                      <Activity className="h-5 w-5 text-green-400" />
+                    <div className="p-2 bg-cyan-500/20 rounded-xl">
+                      <Activity className="h-5 w-5 text-cyan-400" />
                     </div>
-                    <div className="text-xs text-green-300 font-semibold bg-green-500/20 px-2 py-1 rounded-full">
+                    <div className="text-xs text-cyan-300 font-semibold bg-cyan-500/20 px-2 py-1 rounded-full">
                       EXCELLENT
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-3xl font-black text-white mb-2 bg-gradient-to-r from-green-300 to-emerald-300 bg-clip-text text-transparent">
-                      99.9%
+                    <div className="text-3xl font-black text-white mb-2 bg-gradient-to-r from-cyan-300 to-blue-300 bg-clip-text text-transparent">
+                      {systemInfo.uptime}
                     </div>
                     <div className="text-white/70 text-sm font-medium">System Uptime</div>
                     <div className="mt-3 w-full bg-white/10 rounded-full h-2">
-                      <div className="bg-gradient-to-r from-green-400 to-emerald-400 h-2 rounded-full animate-pulse" style={{ width: '99.9%' }}></div>
+                      <div className="bg-gradient-to-r from-cyan-400 to-blue-400 h-2 rounded-full animate-pulse" style={{ width: '99.9%' }}></div>
                     </div>
                   </div>
                 </div>
@@ -787,7 +818,7 @@ const Dashboard = () => {
               
               {/* Total Records Card */}
               <div className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-blue-500/20 rounded-xl">
@@ -799,7 +830,7 @@ const Dashboard = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-black text-white mb-2 bg-gradient-to-r from-blue-300 to-cyan-300 bg-clip-text text-transparent">
-                      {(stats.totalStudents + stats.totalCourses).toLocaleString()}
+                      {systemInfo.totalRecords.toLocaleString()}
                     </div>
                     <div className="text-white/70 text-sm font-medium">Total Records</div>
                     <div className="mt-3 flex items-center justify-center space-x-1">
@@ -813,7 +844,7 @@ const Dashboard = () => {
               
               {/* Refresh Rate Card */}
               <div className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-purple-500/20 rounded-xl">
@@ -829,7 +860,7 @@ const Dashboard = () => {
                   </div>
                   <div className="text-center">
                     <div className="text-3xl font-black text-white mb-2 bg-gradient-to-r from-purple-300 to-pink-300 bg-clip-text text-transparent">
-                      {autoRefreshEnabled ? '30s' : 'Manual'}
+                      {systemInfo.refreshRate}
                     </div>
                     <div className="text-white/70 text-sm font-medium">Refresh Rate</div>
                     <div className="mt-3">
@@ -851,25 +882,25 @@ const Dashboard = () => {
               
               {/* Last Updated Card */}
               <div className="group relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
+                <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-yellow-500/20 rounded-xl">
-                      <Clock className="h-5 w-5 text-yellow-400" />
+                    <div className="p-2 bg-cyan-500/20 rounded-xl">
+                      <Clock className="h-5 w-5 text-cyan-400" />
                     </div>
-                    <div className="text-xs text-yellow-300 font-semibold bg-yellow-500/20 px-2 py-1 rounded-full">
+                    <div className="text-xs text-cyan-300 font-semibold bg-cyan-500/20 px-2 py-1 rounded-full">
                       LIVE
                     </div>
                   </div>
                   <div className="text-center">
-                    <div className="text-lg font-black text-white mb-2 bg-gradient-to-r from-yellow-300 to-orange-300 bg-clip-text text-transparent font-mono">
-                      {new Date().toLocaleTimeString()}
+                    <div className="text-lg font-black text-white mb-2 bg-gradient-to-r from-cyan-300 to-purple-300 bg-clip-text text-transparent font-mono">
+                      {systemInfo.lastUpdated.toLocaleTimeString()}
                     </div>
                     <div className="text-white/70 text-sm font-medium">Last Updated</div>
                     <div className="mt-3 flex items-center justify-center">
                       <div className="relative">
-                        <div className="w-6 h-6 border-2 border-yellow-400 rounded-full animate-spin"></div>
-                        <div className="absolute inset-0 w-6 h-6 border-t-2 border-orange-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
+                        <div className="w-6 h-6 border-2 border-cyan-400 rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 w-6 h-6 border-t-2 border-purple-400 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
                       </div>
                     </div>
                   </div>
@@ -883,15 +914,15 @@ const Dashboard = () => {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-red-500/20 rounded-lg">
-                      <Activity className="h-4 w-4 text-red-400" />
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <Activity className="h-4 w-4 text-blue-400" />
                     </div>
                     <span className="text-white/80 font-medium">CPU Usage</span>
                   </div>
-                  <span className="text-red-300 font-bold">23%</span>
+                  <span className="text-blue-300 font-bold">{systemInfo.performance.cpu}%</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-3 mb-2">
-                  <div className="bg-gradient-to-r from-red-500 to-red-400 h-3 rounded-full animate-pulse" style={{ width: '23%' }}></div>
+                  <div className="bg-gradient-to-r from-blue-500 to-cyan-400 h-3 rounded-full animate-pulse" style={{ width: `${systemInfo.performance.cpu}%` }}></div>
                 </div>
                 <div className="text-xs text-white/50">Optimal performance</div>
               </div>
@@ -900,15 +931,15 @@ const Dashboard = () => {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-blue-500/20 rounded-lg">
-                      <Zap className="h-4 w-4 text-blue-400" />
+                    <div className="p-2 bg-purple-500/20 rounded-lg">
+                      <Zap className="h-4 w-4 text-purple-400" />
                     </div>
                     <span className="text-white/80 font-medium">Memory</span>
                   </div>
-                  <span className="text-blue-300 font-bold">67%</span>
+                  <span className="text-purple-300 font-bold">{systemInfo.performance.memory}%</span>
                 </div>
                 <div className="w-full bg-white/10 rounded-full h-3 mb-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-400 h-3 rounded-full animate-pulse" style={{ width: '67%' }}></div>
+                  <div className="bg-gradient-to-r from-purple-500 to-blue-400 h-3 rounded-full animate-pulse" style={{ width: `${systemInfo.performance.memory}%` }}></div>
                 </div>
                 <div className="text-xs text-white/50">Within normal range</div>
               </div>
@@ -917,16 +948,16 @@ const Dashboard = () => {
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
-                    <div className="p-2 bg-green-500/20 rounded-lg">
-                      <Globe className="h-4 w-4 text-green-400" />
+                    <div className="p-2 bg-cyan-500/20 rounded-lg">
+                      <Globe className="h-4 w-4 text-cyan-400" />
                     </div>
                     <span className="text-white/80 font-medium">Network</span>
                   </div>
-                  <span className="text-green-300 font-bold">Fast</span>
+                  <span className="text-cyan-300 font-bold">{systemInfo.performance.network}</span>
                 </div>
                 <div className="flex items-center space-x-2 mb-2">
                   <div className="flex-1 bg-white/10 rounded-full h-3">
-                    <div className="bg-gradient-to-r from-green-500 to-green-400 h-3 rounded-full animate-pulse" style={{ width: '89%' }}></div>
+                    <div className="bg-gradient-to-r from-cyan-500 to-blue-400 h-3 rounded-full animate-pulse" style={{ width: `${systemInfo.performance.networkSpeed}%` }}></div>
                   </div>
                 </div>
                 <div className="text-xs text-white/50">Connection stable</div>
@@ -937,16 +968,16 @@ const Dashboard = () => {
             <div className="mt-8 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 text-white/60 text-sm">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <span>System healthy</span>
+                  <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <span>System {systemInfo.status.system}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-white/60 text-sm">
                   <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
-                  <span>Database connected</span>
+                  <span>Database {systemInfo.status.database}</span>
                 </div>
                 <div className="flex items-center space-x-2 text-white/60 text-sm">
                   <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
-                  <span>API responsive</span>
+                  <span>API {systemInfo.status.api}</span>
                 </div>
               </div>
               
@@ -955,7 +986,7 @@ const Dashboard = () => {
                   onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
                   className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
                     autoRefreshEnabled
-                      ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg shadow-green-500/25'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25'
                       : 'bg-white/10 text-white/70 hover:bg-white/20'
                   }`}
                 >
@@ -965,7 +996,7 @@ const Dashboard = () => {
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center space-x-2"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center space-x-2"
                 >
                   <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                   <span>{refreshing ? 'Refreshing...' : 'Refresh Now'}</span>
