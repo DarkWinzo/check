@@ -850,10 +850,6 @@ const Layout = ({ children }) => {
               <div className="p-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg">
                 <GraduationCap className="h-7 w-7 text-white" />
               </div>
-              <div>
-                <span className="text-xl font-black gradient-text">EduFlow Pro</span>
-                <p className="text-xs text-gray-500 font-medium">Advanced Learning Platform</p>
-              </div>
             </div>
           </div>
           <nav className="flex-1 px-6 py-6 space-y-3">
