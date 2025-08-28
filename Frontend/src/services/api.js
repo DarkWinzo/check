@@ -17,7 +17,7 @@ const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -47,7 +47,8 @@ api.interceptors.response.use(
     });
     
     if (!error.response) {
-      console.error('Network Error - Backend may not be running');
+      console.error('Network Error - Backend may not be running or connection timeout');
+      error.message = 'Connection failed. Please check if the backend server is running on port 5000.';
       return Promise.reject(error);
     }
     
@@ -81,7 +82,23 @@ export const studentsAPI = {
 }
 
 export const coursesAPI = {
-  getAll: (params) => api.get('/courses', { params }),
+  getAll: (params) => {
+    return api.get('/courses', { 
+      params,
+      timeout: 45000,
+      retry: 3,
+      retryDelay: 1000
+    }).catch(async (error) => {
+      // Retry logic for network errors
+      if (!error.response && error.config && !error.config.__isRetryRequest) {
+        console.log('Retrying courses fetch...');
+        error.config.__isRetryRequest = true;
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return api.request(error.config);
+      }
+      throw error;
+    });
+  },
   getById: (id) => api.get(`/courses/${id}`),
   create: (data) => api.post('/courses', data),
   update: (id, data) => api.put(`/courses/${id}`, data),
