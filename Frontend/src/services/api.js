@@ -39,15 +39,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    });
-    
     if (!error.response) {
-      console.error('Network Error - Backend may not be running or connection timeout');
       error.message = 'Connection failed. Please check if the backend server is running on port 5000.';
       return Promise.reject(error);
     }
@@ -90,7 +82,6 @@ export const coursesAPI = {
       retryDelay: 1000
     }).catch(async (error) => {
       if (!error.response && error.config && !error.config.__isRetryRequest) {
-        console.log('Retrying courses fetch...');
         error.config.__isRetryRequest = true;
         await new Promise(resolve => setTimeout(resolve, 1000));
         return api.request(error.config);

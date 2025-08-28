@@ -267,7 +267,6 @@ export async function query(sql, params = []) {
     }
 }
 
-// Graceful shutdown
 process.on('SIGINT', async () => {
     console.log('Shutting down gracefully...');
     await DATABASE.close();

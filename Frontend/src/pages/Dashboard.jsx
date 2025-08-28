@@ -264,7 +264,6 @@ const Dashboard = () => {
         navigate('/courses')
         break
       case 'analytics':
-        // Show analytics modal or navigate to analytics page
         toast.success('Analytics feature coming soon!')
         break
       default:
@@ -512,7 +511,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
