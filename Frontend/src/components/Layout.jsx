@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { 
@@ -46,6 +46,7 @@ const Layout = ({ children }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
@@ -55,6 +56,7 @@ const Layout = ({ children }) => {
     confirmPassword: ''
   })
   const [notifications, setNotifications] = useState([])
+  const profileMenuRef = useRef(null)
 
   // Load notifications from localStorage on mount
   React.useEffect(() => {
@@ -186,6 +188,51 @@ const Layout = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error)
       toast.error('Error during logout')
+    }
+  }
+
+  // Handle profile menu actions
+  const handleProfileSettings = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Profile Settings clicked')
+    setShowProfileMenu(false)
+    setShowProfileModal(true)
+    toast.success('Opening Profile Settings...')
+  }
+
+  const handleHelpSupport = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Help & Support clicked')
+    setShowProfileMenu(false)
+    setShowSupportModal(true)
+    toast.success('Opening Help & Support...')
+  }
+
+  const handleSignOut = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log('Sign Out clicked')
+    
+    if (window.confirm('Are you sure you want to sign out?')) {
+      try {
+        setIsLoggingOut(true)
+        setShowProfileMenu(false)
+        toast.success('Signing out...')
+        
+        // Add a small delay for better UX
+        setTimeout(() => {
+          logout()
+          toast.success('Successfully signed out!')
+        }, 500)
+      } catch (error) {
+        console.error('Logout error:', error)
+        toast.error('Error signing out')
+        setIsLoggingOut(false)
+      }
+    } else {
+      setShowProfileMenu(false)
     }
   }
 
