@@ -1056,35 +1056,6 @@ const Layout = ({ children }) => {
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs font-bold text-white">{Math.min(unreadCount, 9)}</span>
                   </div>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Page content */}
-        <main className="flex-1">
-          <div className="p-6 lg:p-8">
-            {children}
-          </div>
-        </main>
-      </div>
-
-      {/* Modals */}
-      <ProfileModal />
-      <SupportModal />
-      <NotificationModal />
-
-      {/* Click outside handler for profile menu */}
-      {showProfileMenu && (
-        <div
-          className="fixed inset-0 z-[90]"
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setShowProfileMenu(false)
-          }}
-        />
       )}
     </div>
   )
