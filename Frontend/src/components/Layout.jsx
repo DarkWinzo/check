@@ -160,17 +160,22 @@ const Layout = ({ children }) => {
   }
 
   const handleLogout = () => {
-    if (window.confirm('Are you sure you want to sign out?')) {
-      // Clear notifications on logout
-      localStorage.removeItem('notifications')
-      setNotifications([])
-      setShowProfileMenu(false)
-      setShowProfileModal(false)
-      setShowSupportModal(false)
-      setShowNotifications(false)
-      logout()
-      navigate('/login')
-      toast.success('Signed out successfully')
+    try {
+      if (window.confirm('Are you sure you want to sign out?')) {
+        // Clear notifications on logout
+        localStorage.removeItem('notifications')
+        setNotifications([])
+        setShowProfileMenu(false)
+        setShowProfileModal(false)
+        setShowSupportModal(false)
+        setShowNotifications(false)
+        logout()
+        navigate('/login')
+        toast.success('Signed out successfully')
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+      toast.error('Error during logout')
     }
   }
 
@@ -850,7 +855,7 @@ const Layout = ({ children }) => {
               
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-105 relative z-10"
+                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-200 group shadow-lg hover:shadow-xl hover:scale-105 relative z-20 cursor-pointer active:scale-95"
               >
                 <div className="flex-shrink-0">
                   <div className="relative h-12 w-12 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg">
@@ -877,14 +882,15 @@ const Layout = ({ children }) => {
 
               {/* Profile dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[90] overflow-hidden animate-fade-in">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[100] overflow-hidden animate-fade-in">
                   <div className="p-2">
                     <button
                       onClick={() => {
+                        console.log('Profile Settings clicked')
                         setShowProfileModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md cursor-pointer"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
                     >
                       <div className="p-2 bg-blue-100 rounded-xl mr-3">
                         <Settings className="h-4 w-4 text-blue-600" />
@@ -894,10 +900,11 @@ const Layout = ({ children }) => {
                     </button>
                     <button
                       onClick={() => {
+                        console.log('Help & Support clicked')
                         setShowSupportModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md cursor-pointer"
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
                     >
                       <div className="p-2 bg-green-100 rounded-xl mr-3">
                         <Heart className="h-4 w-4 text-green-600" />
@@ -907,8 +914,14 @@ const Layout = ({ children }) => {
                     </button>
                     <div className="border-t border-gray-200 my-3 mx-2"></div>
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-300 transform hover:scale-105 hover:shadow-md cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('Sign out clicked')
+                        setShowProfileMenu(false)
+                        handleLogout()
+                      }}
+                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
                     >
                       <div className="p-2 bg-red-100 rounded-xl mr-3">
                         <LogOut className="h-4 w-4 text-red-600" />
@@ -974,8 +987,12 @@ const Layout = ({ children }) => {
       {/* Click outside handler for profile menu */}
       {showProfileMenu && (
         <div
-          className="fixed inset-0 z-[80]"
-          onClick={() => setShowProfileMenu(false)}
+          className="fixed inset-0 z-[90]"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setShowProfileMenu(false)
+          }}
         />
       )}
     </div>
