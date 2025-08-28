@@ -290,13 +290,11 @@ const Dashboard = () => {
       onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-        {/* Auto-refresh indicator */}
         <div className="absolute top-2 right-2">
           <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
                title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
         </div>
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
             <Icon className="h-6 w-6 text-white" />
@@ -311,7 +309,6 @@ const Dashboard = () => {
           )}
         </div>
         
-        {/* Content */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-600">{title}</h3>
           <div className="text-3xl font-bold text-gray-900">
@@ -319,7 +316,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </div>
@@ -342,23 +338,13 @@ const Dashboard = () => {
         
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-            className={`p-2 rounded-lg transition-colors duration-200 ${
-              autoRefreshEnabled 
-                ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
-            }`}
-            title={autoRefreshEnabled ? 'Disable auto-refresh' : 'Enable auto-refresh'}
-          >
-            <Activity className={`h-4 w-4 ${autoRefreshEnabled ? 'animate-pulse' : ''}`} />
-          </button>
-          <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50"
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 disabled:opacity-50 flex items-center space-x-2"
             title="Refresh now"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="text-sm font-medium">Refresh</span>
           </button>
         </div>
       </div>
@@ -610,7 +596,6 @@ const Dashboard = () => {
 
         {/* Analytics Section */}
         <div className="space-y-6">
-          {/* Analytics Navigation */}
           <div className="flex flex-wrap gap-3 justify-center">
             {[
               { id: 'enrollment', label: 'Enrollment Analytics', icon: BarChart3, color: 'blue' },
@@ -622,7 +607,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  // Trigger a subtle refresh when switching analytics
                   fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
@@ -640,7 +624,6 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Analytics Content */}
           <AnalyticsCard
             title={
               selectedAnalytic === 'enrollment' ? 'Course Enrollment Analytics' :
@@ -665,7 +648,6 @@ const Dashboard = () => {
           </AnalyticsCard>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { 
@@ -713,24 +695,18 @@ const Dashboard = () => {
         </div>
 
         {/* System Status */}
-        {/* Enhanced 3D System Status */}
         <div className="relative overflow-hidden">
-          {/* Background Effects */}
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl"></div>
           <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl"></div>
           
-          {/* Animated Background Orbs */}
           <div className="absolute top-4 left-4 w-32 h-32 bg-gradient-to-r from-cyan-400/20 to-blue-500/20 rounded-full blur-xl animate-pulse"></div>
           <div className="absolute bottom-4 right-4 w-40 h-40 bg-gradient-to-r from-purple-400/20 to-pink-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '1s' }}></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-r from-yellow-400/20 to-orange-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '2s' }}></div>
           
-          {/* Main Content */}
           <div className="relative bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl p-8">
-            {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  {/* Glowing Ring */}
                   <div className="absolute -inset-2 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 rounded-full opacity-20 animate-spin" style={{ animationDuration: '3s' }}></div>
                   <div className="relative p-3 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl">
                     <Zap className="h-7 w-7 text-yellow-400 drop-shadow-lg animate-pulse" />
@@ -746,7 +722,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Status Indicator */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <div className="w-4 h-4 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50"></div>
@@ -759,9 +734,8 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* 3D Status Cards Grid */}
+            {/* Status Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Uptime Card */}
               <div className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
@@ -785,7 +759,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Total Records Card */}
               <div className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
@@ -811,7 +784,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Refresh Rate Card */}
               <div className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-purple-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
@@ -849,7 +821,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Last Updated Card */}
               <div className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                 <div className="relative bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500 transform hover:-translate-y-2 hover:scale-105">
@@ -877,9 +848,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Performance Metrics */}
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* CPU Usage */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
@@ -896,7 +865,6 @@ const Dashboard = () => {
                 <div className="text-xs text-white/50">Optimal performance</div>
               </div>
               
-              {/* Memory Usage */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
@@ -913,7 +881,6 @@ const Dashboard = () => {
                 <div className="text-xs text-white/50">Within normal range</div>
               </div>
               
-              {/* Network */}
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center space-x-2">
@@ -933,7 +900,6 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Footer Actions */}
             <div className="mt-8 flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 text-white/60 text-sm">
