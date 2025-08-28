@@ -161,7 +161,9 @@ const Layout = ({ children }) => {
 
   const handleLogout = () => {
     try {
+      console.log('Logout function called')
       if (window.confirm('Are you sure you want to sign out?')) {
+        console.log('User confirmed logout')
         // Clear notifications on logout
         localStorage.removeItem('notifications')
         setNotifications([])
@@ -169,11 +171,17 @@ const Layout = ({ children }) => {
         setShowProfileModal(false)
         setShowSupportModal(false)
         setShowNotifications(false)
+        
+        console.log('Calling logout function...')
         logout()
         toast.success('Signed out successfully')
+        
+        console.log('Navigating to login...')
         setTimeout(() => {
           navigate('/login')
         }, 500)
+      } else {
+        console.log('User cancelled logout')
       }
     } catch (error) {
       console.error('Logout error:', error)
