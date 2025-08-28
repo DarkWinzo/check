@@ -424,11 +424,6 @@ const Layout = ({ children }) => {
               {/* Additional Settings */}
               <div className="space-y-4 pt-6 border-t border-gray-200">
                 <h5 className="text-lg font-bold text-gray-900 flex items-center">
-    </div>
-  )
-}
-
-export default Layout
                   <Palette className="h-5 w-5 mr-2 text-gray-600" />
                   Preferences
                 </h5>
@@ -1061,7 +1056,22 @@ export default Layout
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs font-bold text-white">{Math.min(unreadCount, 9)}</span>
                   </div>
-      )}
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <main className="flex-1">
+          {children}
+        </main>
+      </div>
+
+      {/* Modals */}
+      <ProfileModal />
+      <SupportModal />
+      <NotificationModal />
     </div>
   )
 }
