@@ -452,7 +452,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     <div className="flex items-center justify-between">
                       <span>Current Course Registrations</span>
-                      {mode === 'edit' && (
+                      {(mode === 'edit' || isEditing) && (
                         <button
                           type="button"
                           onClick={() => fetchStudentRegistrations()}
@@ -507,7 +507,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                               }`}>
                                 {registration.status}
                               </span>
-                              {(mode === 'edit' || isEditing) && registration.status === 'enrolled' && (
+                              {(mode === 'edit' || isEditing) && (registration.status === 'enrolled' || registration.status === 'dropped') && (
                                 <button
                                   type="button"
                                   onClick={() => handleUnenrollFromCourse(registration.id)}
@@ -526,7 +526,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                         <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                         <p className="text-sm text-gray-500">No course registrations found</p>
                         <p className="text-xs text-gray-400 mt-1">This student is not currently enrolled in any courses</p>
-                        {(mode === 'edit' || isEditing) && (
+                        {(mode === 'edit' || isEditing) && !showCourseSelection && (
                           <button
                             type="button"
                             onClick={() => setShowCourseSelection(true)}
@@ -540,7 +540,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   </div>
                   
                   {/* Add Course Selection for Edit Mode */}
-                  {mode === 'edit' && studentRegistrations.length > 0 && (
+                  {(mode === 'edit' || isEditing) && studentRegistrations.length > 0 && !showCourseSelection && (
                     <div className="mt-4">
                       <button
                         type="button"
@@ -556,7 +556,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               )}
               
               {/* Course Selection Modal for Edit Mode */}
-              {(mode === 'edit' || isEditing) && studentRegistrations.length > 0 && (
+              {(mode === 'edit' || isEditing) && showCourseSelection && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                     <div className="flex items-center justify-between mb-4">
@@ -577,7 +577,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                       {courses.length > 0 ? (
                         <div className="space-y-2">
                           {courses
-                            .filter(course => !studentRegistrations.some(reg => reg.Course?.id === course.id))
+                            .filter(course => !studentRegistrations.some(reg => reg.Course?.id === course.id && reg.status === 'enrolled'))
                             .map(course => (
                             <label key={course.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors duration-200">
                               <input
