@@ -844,6 +844,22 @@ const Layout = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
+        <div className="flex flex-col flex-grow bg-white/95 backdrop-blur-2xl border-r border-gray-200/50 shadow-2xl">
+          <div className="flex items-center h-20 px-8 border-b border-gray-200/50 bg-gradient-to-r from-primary-50 to-primary-100">
+            <div className="flex items-center space-x-3">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl opacity-75 animate-pulse"></div>
+                <div className="relative p-2 bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-2xl">
+                  <GraduationCap className="h-8 w-8 text-white" />
+                </div>
+              </div>
+              <div>
+                <span className="text-2xl font-black text-gray-900 bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent">
+                  EduFlow Pro
+                </span>
+                <div className="text-xs text-gray-500 font-medium">Student Registration System</div>
+              </div>
+            </div>
           </div>
           <nav className="flex-1 px-6 py-6 space-y-3">
             {navigation.map((item) => {
