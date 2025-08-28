@@ -844,13 +844,6 @@ const Layout = ({ children }) => {
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex flex-col flex-grow glass-card border-r border-gray-200/50">
-          <div className="flex items-center h-16 px-4 border-b">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg">
-                <GraduationCap className="h-7 w-7 text-white" />
-              </div>
-            </div>
           </div>
           <nav className="flex-1 px-6 py-6 space-y-3">
             {navigation.map((item) => {
