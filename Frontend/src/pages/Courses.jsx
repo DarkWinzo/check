@@ -24,7 +24,6 @@ const Courses = () => {
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
 
   useEffect(() => {
-    // Add a small delay to ensure component is mounted
     const timer = setTimeout(() => {
       fetchCourses()
     }, 100);
@@ -52,7 +51,6 @@ const Courses = () => {
       } catch (error) {
         console.error('Error fetching courses (attempt ' + (retryCount + 1) + '):', error);
         
-        // Retry logic for network errors
         if (!error.response && retryCount < maxRetries - 1) {
           retryCount++;
           console.log(`Retrying courses fetch... (${retryCount}/${maxRetries})`);
@@ -60,7 +58,6 @@ const Courses = () => {
           return attemptFetch();
         }
         
-        // Show appropriate error message
         let message = 'Failed to fetch courses. Please try again.';
         
         if (!error.response) {

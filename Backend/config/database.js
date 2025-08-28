@@ -11,10 +11,8 @@ const dbDir = join(__dirname, "../database/store");
 try {
     mkdirSync(dbDir, { recursive: true });
 } catch (error) {
-    //console.log(error)
 }
 
-// Database
 const DATABASE_URL = config.DATABASE_URL || "local";
 const DATABASE = DATABASE_URL === "local" ?
     new Sequelize({ 
@@ -27,7 +25,6 @@ const DATABASE = DATABASE_URL === "local" ?
         ssl: false,
         protocol: 'postgres',
         dialectOptions: {
-            // Remove SSL for local development
         },
         logging: false
     });
@@ -195,7 +192,6 @@ Registration.belongsTo(Student, { foreignKey: 'student_id' });
 Course.hasMany(Registration, { foreignKey: 'course_id', onDelete: 'CASCADE' });
 Registration.belongsTo(Course, { foreignKey: 'course_id' });
 
-// Testingg
 export async function testConnection() {
     try {
         await DATABASE.authenticate();
@@ -233,13 +229,11 @@ export async function initializeDatabase() {
 
 async function createDefaultAdmin() {
     try {
-        // already exists check
         const existingAdmin = await User.findOne({
             where: { email: config.ADMIN_EMAIL }
         });
 
         if (!existingAdmin) {
-            // Hash pswd
             const hashedPassword = await bcrypt.hash(config.ADMIN_PASSWORD, 12);
             const adminUser = await User.create({
                 email: config.ADMIN_EMAIL,
@@ -247,10 +241,8 @@ async function createDefaultAdmin() {
                 role: 'admin'
             });
 
-            //console.log('✅ Default admin user created successfully!');
             console.log('📧 Admin Email:', config.ADMIN_EMAIL);
             console.log('🔑 Admin Password:', config.ADMIN_PASSWORD);
-            //console.log('⚠️  Please change the default password after first login!');
         } else {
             console.log('ℹ️  Admin user already exists');
         }

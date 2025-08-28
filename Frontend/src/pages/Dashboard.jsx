@@ -74,11 +74,10 @@ const Dashboard = () => {
   useEffect(() => {
     fetchDashboardData()
     
-    // Set up auto-refresh every 30 seconds
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true) // Silent refresh
+        fetchDashboardData(true)
       }, 30000)
     }
     
@@ -95,7 +94,6 @@ const Dashboard = () => {
         setLoading(true)
       }
       
-      // Fetch real data with higher limits to get actual data
       const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
         studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
         coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
@@ -115,11 +113,9 @@ const Dashboard = () => {
         activeEnrollments: activeEnrollments
       })
 
-      // Generate analytics data based on real data
       generateRealAnalyticsData(students, courses, registrations)
       
       if (silent) {
-        // Show a subtle notification for auto-refresh
         const event = new CustomEvent('systemNotification', {
           detail: { 
             title: 'Dashboard Updated', 
@@ -143,16 +139,9 @@ const Dashboard = () => {
   }
 
   const generateRealAnalyticsData = (students, courses, registrations) => {
-    // Real enrollment trends based on registration dates
     const enrollmentTrends = generateEnrollmentTrends(registrations)
-    
-    // Real course distribution based on actual courses
     const courseDistribution = generateCourseDistribution(courses, registrations)
-    
-    // Real status distribution based on actual registration statuses
     const statusDistribution = generateStatusDistribution(registrations)
-    
-    // Real growth data based on creation dates
     const growthData = generateGrowthData(students, courses, registrations)
 
     setAnalyticsData({
@@ -535,7 +524,6 @@ const Dashboard = () => {
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
           
-          {/* Auto-refresh status */}
           <div className="mt-4 flex items-center justify-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} />
             <span className="text-sm text-gray-500">
@@ -550,7 +538,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
@@ -594,7 +581,6 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Analytics Section */}
         <div className="space-y-6">
           <div className="flex flex-wrap gap-3 justify-center">
             {[
@@ -694,7 +680,6 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* System Status */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl"></div>
           <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl"></div>
@@ -734,7 +719,6 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Status Cards Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="group relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
