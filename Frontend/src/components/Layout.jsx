@@ -170,8 +170,10 @@ const Layout = ({ children }) => {
         setShowSupportModal(false)
         setShowNotifications(false)
         logout()
-        navigate('/login')
         toast.success('Signed out successfully')
+        setTimeout(() => {
+          navigate('/login')
+        }, 500)
       }
     } catch (error) {
       console.error('Logout error:', error)
@@ -855,7 +857,7 @@ const Layout = ({ children }) => {
               
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-200 group shadow-lg hover:shadow-xl hover:scale-105 relative z-20 cursor-pointer active:scale-95"
+                className="flex items-center w-full p-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 transition-all duration-300 group shadow-lg hover:shadow-xl hover:scale-105 relative z-20 cursor-pointer active:scale-95 transform hover:-translate-y-1"
               >
                 <div className="flex-shrink-0">
                   <div className="relative h-12 w-12 rounded-2xl bg-gradient-to-r from-primary-600 to-primary-700 flex items-center justify-center shadow-lg">
@@ -882,37 +884,65 @@ const Layout = ({ children }) => {
 
               {/* Profile dropdown */}
               {showProfileMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white backdrop-blur-2xl rounded-3xl shadow-2xl border border-gray-200/50 z-[100] overflow-hidden animate-fade-in">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/30 z-[100] overflow-hidden animate-fade-in transform scale-100 origin-bottom">
                   <div className="p-2">
+                    {/* Profile Settings Button */}
                     <button
                       onClick={() => {
                         console.log('Profile Settings clicked')
                         setShowProfileModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-blue-100 hover:text-blue-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
+                      className="group flex items-center w-full px-5 py-4 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 transform hover:-translate-y-1 relative overflow-hidden"
                     >
-                      <div className="p-2 bg-blue-100 rounded-xl mr-3">
-                        <Settings className="h-4 w-4 text-blue-600" />
+                      {/* Animated background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                      
+                      <div className="relative p-2.5 bg-gradient-to-r from-blue-100 to-purple-100 group-hover:from-white/20 group-hover:to-white/20 rounded-xl mr-4 transition-all duration-300 group-hover:scale-110">
+                        <Settings className="h-5 w-5 text-blue-600 group-hover:text-white transition-all duration-300 group-hover:rotate-90" />
                       </div>
-                      Profile Settings
-                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
+                      <span className="relative font-bold group-hover:text-white transition-colors duration-300">Profile Settings</span>
+                      <div className="relative ml-auto flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-300"></div>
+                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                      </div>
                     </button>
+                    
+                    {/* Help & Support Button */}
                     <button
                       onClick={() => {
                         console.log('Help & Support clicked')
                         setShowSupportModal(true)
                         setShowProfileMenu(false)
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-50 hover:to-green-100 hover:text-green-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
+                      className="group flex items-center w-full px-5 py-4 text-sm font-bold text-gray-700 rounded-2xl hover:bg-gradient-to-r hover:from-green-500 hover:to-emerald-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 transform hover:-translate-y-1 relative overflow-hidden"
                     >
-                      <div className="p-2 bg-green-100 rounded-xl mr-3">
-                        <Heart className="h-4 w-4 text-green-600" />
+                      {/* Animated background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                      
+                      <div className="relative p-2.5 bg-gradient-to-r from-green-100 to-emerald-100 group-hover:from-white/20 group-hover:to-white/20 rounded-xl mr-4 transition-all duration-300 group-hover:scale-110">
+                        <Heart className="h-5 w-5 text-green-600 group-hover:text-white transition-all duration-300 group-hover:scale-110 animate-pulse" />
                       </div>
-                      Help & Support
-                      <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
+                      <span className="relative font-bold group-hover:text-white transition-colors duration-300">Help & Support</span>
+                      <div className="relative ml-auto flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-400 rounded-full opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-300"></div>
+                        <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                      </div>
                     </button>
-                    <div className="border-t border-gray-200 my-3 mx-2"></div>
+                    
+                    {/* Elegant Divider */}
+                    <div className="relative my-3 mx-2">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-500 rounded-full animate-pulse"></div>
+                      </div>
+                    </div>
+                    
+                    {/* Sign Out Button */}
                     <button
                       onClick={(e) => {
                         e.preventDefault()
@@ -921,15 +951,21 @@ const Layout = ({ children }) => {
                         setShowProfileMenu(false)
                         handleLogout()
                       }}
-                      className="flex items-center w-full px-4 py-3 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-50 hover:to-red-100 hover:text-red-700 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer active:scale-95"
+                      className="group flex items-center w-full px-5 py-4 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 transform hover:-translate-y-1 relative overflow-hidden"
                     >
-                      <div className="p-2 bg-red-100 rounded-xl mr-3">
-                        <LogOut className="h-4 w-4 text-red-600" />
+                      {/* Animated background */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                      
+                      <div className="relative p-2.5 bg-gradient-to-r from-red-100 to-pink-100 group-hover:from-white/20 group-hover:to-white/20 rounded-xl mr-4 transition-all duration-300 group-hover:scale-110">
+                        <LogOut className="h-5 w-5 text-red-600 group-hover:text-white transition-all duration-300 group-hover:-rotate-12" />
                       </div>
-                      Sign out
+                      <span className="relative font-bold group-hover:text-white transition-colors duration-300">Sign out</span>
                       <div className="ml-auto flex items-center space-x-1">
-                        <Shield className="h-3 w-3 text-red-400" />
-                        <span className="text-xs text-red-500">Secure</span>
+                        <div className="relative flex items-center space-x-1">
+                          <Shield className="h-3 w-3 text-red-400 group-hover:text-white/80 transition-colors duration-300" />
+                          <span className="text-xs text-red-500 group-hover:text-white/80 font-medium transition-colors duration-300">Secure</span>
+                        </div>
                       </div>
                     </button>
                   </div>
