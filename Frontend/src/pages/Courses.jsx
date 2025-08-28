@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { coursesAPI, registrationsAPI, studentsAPI } from '../services/api'
-import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2, UserCheck, Mail, Phone, RefreshCw } from 'lucide-react'
+import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2, UserCheck, Mail, Phone } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CourseModal from '../components/CourseModal'
@@ -24,20 +24,27 @@ const Courses = () => {
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
 
   useEffect(() => {
-    // Add a small delay to ensure component is mounted
-    const timer = setTimeout(() => {
-      fetchCourses()
-    }, 100);
-    
-    return () => clearTimeout(timer);
+    fetchCourses()
   }, [searchTerm])
 
-        console.log('Fetching courses with params:', params);
   const fetchCourses = async (page = 1) => {
-        console.log('Courses fetch successful:', response.data);
     const maxRetries = 3;
     let retryCount = 0;
     
+    const attemptFetch = async () => {
+      try {
+        const params = {
+          page,
+          limit: 12,
+          search: searchTerm
+        }
+        
+        console.log('Fetching courses with params:', params);
+        const response = await coursesAPI.getAll(params)
+        console.log('Courses fetch successful:', response.data);
+        setCourses(response.data.courses || [])
+        setPagination(response.data.pagination || {})
+      } catch (error) {
         console.error('Error fetching courses (attempt ' + (retryCount + 1) + '):', error);
         
         // Retry logic for network errors
@@ -62,27 +69,14 @@ const Courses = () => {
         }
         
         toast.error(message);
-      const params = {
-        page,
-        limit: 12,
-        search: searchTerm
+        setCourses([])
+        setPagination({})
+      } finally {
+        setLoading(false)
       }
     };
     
     return attemptFetch();
-
-      const response = await coursesAPI.getAll(params)
-      setCourses(response.data.courses || [])
-      setPagination(response.data.pagination || {})
-    } catch (error) {
-      console.error('Error fetching courses:', error)
-      const message = error.response?.data?.message || 'Failed to fetch courses. Please try again.'
-      toast.error(message)
-      setCourses([])
-      setPagination({})
-    } finally {
-      setLoading(false)
-    }
   }
 
   const handleRegister = async (courseId) => {
@@ -555,31 +549,10 @@ const Courses = () => {
               : 'No courses have been added to the system yet.'
             }
           </p>
-          
-          {/* Retry button for connection issues */}
-          <div className="flex flex-col items-center space-y-4">
-            <button 
-              onClick={() => fetchCourses()}
-              className="btn btn-outline flex items-center space-x-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              <span>Retry Loading</span>
-            </button>
-            
-            <div className="text-sm text-gray-500 max-w-md">
-              <p>If you're seeing connection errors:</p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Check if the backend server is running on port 5000</li>
-                <li>Verify your internet connection</li>
-                <li>Try refreshing the page</li>
-              </ul>
-            </div>
-          </div>
-          
           {user?.role === 'admin' && !searchTerm && (
             <button 
               onClick={handleCreateCourse}
-              className="btn btn-primary mt-4"
+              className="btn btn-primary"
             >
               <Plus className="h-5 w-5 mr-2" />
               Add First Course
