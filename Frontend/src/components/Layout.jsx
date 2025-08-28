@@ -457,7 +457,6 @@ const Layout = ({ children }) => {
                 </div>
               </div>
             </div>
-            </div>
             <div className="flex items-center justify-end space-x-4 p-8 border-t border-gray-200 bg-gray-50">
               <button
                 onClick={() => setShowProfileModal(false)}
