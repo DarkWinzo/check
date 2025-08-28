@@ -42,9 +42,23 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.5s ease-out',
         'float': 'float 3s ease-in-out infinite',
+        'float-3d': 'float3D 6s ease-in-out infinite',
+        'rotate-3d': 'rotate3D 20s linear infinite',
+        'morphing': 'morphing 8s ease-in-out infinite',
+        'holographic': 'holographic 3s ease infinite',
+        'particle-float': 'particle-float 8s ease-in-out infinite',
+        'magnetic-pull': 'magnetic-pull 0.6s ease-in-out',
       },
       backdropBlur: {
         xs: '2px',
+        '3xl': '64px',
+      },
+      perspective: {
+        '1000': '1000px',
+        '2000': '2000px',
+      },
+      transformStyle: {
+        'preserve-3d': 'preserve-3d',
       }
     },
   },

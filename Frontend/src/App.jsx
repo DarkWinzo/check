@@ -1,8 +1,8 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './contexts/AuthContext'
-import Layout from './components/Layout'
-import Login from './pages/Login'
+import Layout3D from './components/Layout3D'
+import Login3D from './pages/Login3D'
 import Dashboard from './pages/Dashboard'
 import Courses from './pages/Courses'
 import Students from './pages/Students'
@@ -26,14 +26,14 @@ function App() {
   if (!user) {
     return (
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login3D />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     )
   }
 
   return (
-    <Layout>
+    <Layout3D>
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -42,7 +42,7 @@ function App() {
         
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </Layout>
+    </Layout3D>
   )
 }
 
