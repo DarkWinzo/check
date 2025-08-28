@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, User, Mail, Phone, Calendar, MapPin, Save, Eye, Edit, BookOpen, Plus } from 'lucide-react'
+import { X, User, Mail, Phone, Calendar, MapPin, Save, Eye, Edit, BookOpen, Plus, RefreshCw } from 'lucide-react'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import LoadingSpinner from './LoadingSpinner'
@@ -66,6 +66,9 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       const registrations = Array.isArray(response.data?.data) ? response.data.data : 
                            Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
+      
+      // Clear selected courses when registrations are refreshed
+      setSelectedCourses([])
     } catch (error) {
       console.error('Error fetching student registrations:', error);
       setStudentRegistrations([])
@@ -157,6 +160,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     }
 
     try {
+      setLoading(true)
       await studentsAPI.enrollInCourses(student.id, selectedCourses)
       toast.success(`Enrolled in ${selectedCourses.length} course${selectedCourses.length !== 1 ? 's' : ''}!`)
       setSelectedCourses([])
@@ -164,7 +168,10 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       fetchStudentRegistrations()
     } catch (error) {
       console.error('Error enrolling in courses:', error)
-      toast.error('Failed to enroll in courses')
+      const message = error.response?.data?.message || 'Failed to enroll in courses'
+      toast.error(message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -449,20 +456,21 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               {/* Current Registrations (only for view/edit mode) */}
               {(mode === 'view' || mode === 'edit') && student && (
                 <div className="md:col-span-2 lg:col-span-3">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-4">
+                    <label className="block text-sm font-semibold text-gray-700">
                       <span>Current Course Registrations</span>
-                      {isEditing && (
-                        <button
-                          type="button"
-                          onClick={() => fetchStudentRegistrations()}
-                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        >
-                          Refresh
-                        </button>
-                      )}
-                    </div>
-                  </label>
+                    </label>
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => fetchStudentRegistrations()}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium flex items-center space-x-1"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        <span>Refresh</span>
+                      </button>
+                    )}
+                  </div>
                   <div className="bg-gray-50 rounded-xl p-4 max-h-48 overflow-y-auto">
                     {loadingRegistrations ? (
                       <div className="flex items-center justify-center py-4">
@@ -530,9 +538,10 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                           <button
                             type="button"
                             onClick={() => setShowCourseSelection(true)}
-                            className="mt-3 text-sm text-blue-600 hover:text-blue-700 font-medium underline hover:no-underline transition-all duration-200"
+                            className="mt-4 btn btn-primary text-sm py-2 px-4 flex items-center space-x-2 mx-auto"
                           >
-                            Add Courses
+                            <Plus className="h-4 w-4" />
+                            <span>Add Courses</span>
                           </button>
                         )}
                       </div>
@@ -545,7 +554,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                       <button
                         type="button"
                         onClick={() => setShowCourseSelection(true)}
-                        className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center underline hover:no-underline transition-all duration-200"
+                        className="btn btn-outline text-sm py-2 px-4 flex items-center space-x-2"
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Add More Courses
@@ -577,7 +586,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                       {courses.length > 0 ? (
                         <div className="space-y-2">
                           {courses
-                            .filter(course => !studentRegistrations.some(reg => reg.Course?.id === course.id && (reg.status === 'enrolled' || reg.status === 'completed')))
+                            .filter(course => !studentRegistrations.some(reg => reg.Course?.id === course.id && reg.status === 'enrolled'))
                             .map(course => (
                             <label key={course.id} className="flex items-center space-x-3 p-2 hover:bg-white rounded-lg cursor-pointer transition-colors duration-200">
                               <input
@@ -605,9 +614,10 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-4">
+                        <div className="text-center py-6">
                           <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                          <p className="text-sm text-gray-500">No additional courses available</p>
+                          <p className="text-sm text-gray-500 mb-2">No additional courses available</p>
+                          <p className="text-xs text-gray-400">All available courses are already enrolled or completed</p>
                         </div>
                       )}
                     </div>
@@ -616,14 +626,36 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                       <div className="text-sm text-gray-600">
                         {selectedCourses.length} course{selectedCourses.length !== 1 ? 's' : ''} selected
                       </div>
-                      <button
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowCourseSelection(false)
+                            setSelectedCourses([])
+                          }}
+                          className="btn btn-outline text-sm py-2 px-4"
+                        >
+                          Cancel
+                        </button>
+                        <button
                         type="button"
                         onClick={handleAddCourses}
-                        disabled={selectedCourses.length === 0}
-                        className="btn btn-primary text-sm py-2 px-4 disabled:opacity-50"
+                        disabled={selectedCourses.length === 0 || loading}
+                        className="btn btn-primary text-sm py-2 px-4 disabled:opacity-50 flex items-center space-x-2"
                       >
-                        Add Selected Courses
+                        {loading ? (
+                          <>
+                            <LoadingSpinner size="sm" />
+                            <span>Adding...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4" />
+                            <span>Add Selected</span>
+                          </>
+                        )}
                       </button>
+                      </div>
                     </div>
                   </div>
                 </div>
