@@ -24,7 +24,12 @@ const Courses = () => {
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
 
   useEffect(() => {
-    fetchCourses()
+    // Add a small delay to ensure component is mounted
+    const timer = setTimeout(() => {
+      fetchCourses()
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [searchTerm])
 
   const fetchCourses = async (page = 1) => {
