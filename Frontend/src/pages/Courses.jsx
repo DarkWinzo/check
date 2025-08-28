@@ -43,17 +43,13 @@ const Courses = () => {
           search: searchTerm
         }
         
-        console.log('Fetching courses with params:', params);
         const response = await coursesAPI.getAll(params)
-        console.log('Courses fetch successful:', response.data);
         setCourses(response.data.courses || [])
         setPagination(response.data.pagination || {})
       } catch (error) {
-        console.error('Error fetching courses (attempt ' + (retryCount + 1) + '):', error);
         
         if (!error.response && retryCount < maxRetries - 1) {
           retryCount++;
-          console.log(`Retrying courses fetch... (${retryCount}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           return attemptFetch();
         }
@@ -143,7 +139,6 @@ const Courses = () => {
       const response = await coursesAPI.getRegistrations(course.id)
       setEnrolledStudents(response.data || [])
     } catch (error) {
-      console.error('Error fetching course enrollments:', error);
       const message = error.response?.data?.message || 'Failed to fetch course enrollments'
       toast.error(message)
       setEnrolledStudents([])

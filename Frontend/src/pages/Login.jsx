@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../contexts/AuthContext'
-import { GraduationCap, Eye, EyeOff, Mail, Lock, ArrowRight, Star, Heart, Zap, Shield } from 'lucide-react'
+import { GraduationCap, Eye, EyeOff, Mail, Lock, ArrowRight, Star } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -21,18 +21,15 @@ const Login = () => {
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      console.log('Login form submitted:', { email: data.email });
       const result = await login(data.email, data.password)
       
       if (result.success) {
         toast.success('Welcome back!')
         navigate('/dashboard')
       } else {
-        console.error('Login failed:', result.error);
         toast.error(result.error)
       }
     } catch (error) {
-      console.error('Login form error:', error);
       toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)

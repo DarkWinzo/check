@@ -35,7 +35,6 @@ const Students = () => {
       setStudents(response.data.students || [])
       setPagination(response.data.pagination || {})
     } catch (error) {
-      console.error('Error fetching students:', error)
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         'Failed to fetch students. Please check your connection and try again.'
