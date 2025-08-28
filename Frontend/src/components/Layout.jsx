@@ -1058,6 +1058,16 @@ const Layout = ({ children }) => {
                   </div>
                 )}
               </button>
+              <button
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+                className="flex items-center space-x-2 p-2 text-gray-500 hover:text-gray-600"
+              >
+                <div className="h-6 w-6 rounded-full bg-primary-600 flex items-center justify-center">
+                  <span className="text-xs font-medium text-white">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </div>
