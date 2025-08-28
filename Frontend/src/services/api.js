@@ -78,8 +78,6 @@ export const coursesAPI = {
     return api.get('/courses', { 
       params,
       timeout: 45000,
-      retry: 3,
-      retryDelay: 1000
     }).catch(async (error) => {
       if (!error.response && error.config && !error.config.__isRetryRequest) {
         error.config.__isRetryRequest = true;

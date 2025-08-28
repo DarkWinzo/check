@@ -49,7 +49,6 @@ const Layout = ({ children }) => {
   const handleProfileSettings = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Profile Settings clicked')
     setProfileMenuOpen(false)
     setShowProfileModal(true)
     toast.success('Profile Settings opened!')
@@ -58,7 +57,6 @@ const Layout = ({ children }) => {
   const handleHelpSupport = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Help & Support clicked')
     setProfileMenuOpen(false)
     setShowSupportModal(true)
     toast.success('Help & Support opened!')
@@ -67,7 +65,6 @@ const Layout = ({ children }) => {
   const handleSignOut = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Sign Out clicked')
     
     if (window.confirm('Are you sure you want to sign out?')) {
       setIsLoggingOut(true)
