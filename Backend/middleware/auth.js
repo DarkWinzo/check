@@ -20,6 +20,7 @@ export const authenticateToken = async (req, res, next) => {
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid token' });
+    }
     const decoded = jwt.verify(token, config.JWT_SECRET);
     
     // Add retry logic for database queries
@@ -32,6 +33,10 @@ export const authenticateToken = async (req, res, next) => {
           attributes: ['id', 'email', 'role']
         });
         break;
+      } catch (retryError) {
+        retryCount++;
+      }
+    }
     if (!user) {
       return res.status(401).json({ message: 'Invalid token - user not found' });
     }
