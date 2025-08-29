@@ -975,25 +975,24 @@ const Layout = ({ children }) => {
                         e.stopPropagation()
                         console.log('Sign out clicked')
                         setShowProfileMenu(false)
-        <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 sticky top-0 z-40">
+                        handleLogout()
                       }}
                       className="group flex items-center w-full px-5 py-4 text-sm font-bold text-red-600 rounded-2xl hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-600 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer active:scale-95 transform hover:-translate-y-1 relative overflow-hidden"
                     >
                       {/* Animated background */}
                       <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
-          <div className="flex items-center space-x-2 flex-1 justify-center">
+                      
                       <div className="relative p-2.5 bg-gradient-to-r from-red-100 to-pink-100 group-hover:from-white/20 group-hover:to-white/20 rounded-xl mr-4 transition-all duration-300 group-hover:scale-110">
                         <LogOut className="h-5 w-5 text-red-600 group-hover:text-white transition-all duration-300 group-hover:-rotate-12" />
                       </div>
                       <span className="relative font-bold group-hover:text-white transition-colors duration-300">Sign out</span>
                       <div className="ml-auto flex items-center space-x-1">
                         <div className="relative flex items-center space-x-1">
-              className="relative p-2 text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
                           <span className="text-xs text-red-500 group-hover:text-white/80 font-medium transition-colors duration-300">Secure</span>
                         </div>
                       </div>
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                    </button>
                   </div>
                 </div>
               )}
@@ -1006,25 +1005,25 @@ const Layout = ({ children }) => {
       <div className="lg:pl-72">
         {/* Mobile header */}
         <div className="lg:hidden">
-          <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200 sticky top-0 z-40">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-600"
+              className="relative p-2 text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
             >
               <Menu className="h-6 w-6" />
             </button>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-1 justify-center">
               <GraduationCap className="h-6 w-6 text-primary-600" />
-              className="flex items-center space-x-2 p-2 text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              <span className="text-lg font-bold text-gray-900">EduFlow Pro</span>
             </div>
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setShowNotifications(true)}
-                className="relative p-2 text-gray-500 hover:text-gray-600"
+                className="flex items-center space-x-2 p-2 text-gray-500 hover:text-gray-600 rounded-lg hover:bg-gray-100"
               >
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs font-bold text-white">{Math.min(unreadCount, 9)}</span>
                   </div>
                 )}
@@ -1089,7 +1088,7 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Modals */}
-      <main className="flex-1 min-h-0">
+      <ProfileModal />
       <SupportModal />
       <NotificationModal />
     </div>
