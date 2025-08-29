@@ -7,7 +7,7 @@ import config from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const dbDir = join(__dirname, "../database");
+const dbDir = join(__dirname, "../database/database.js");
 try {
     mkdirSync(dbDir, { recursive: true });
 } catch (error) {
