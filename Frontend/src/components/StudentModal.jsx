@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { X, User, Mail, Phone, Calendar, MapPin, Save, Eye, Edit, BookOpen, Plus, RefreshCw } from 'lucide-react'
+import { X, User, Mail, Phone, Calendar, MapPin, Save, Edit, BookOpen, Plus, RefreshCw } from 'lucide-react'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import toast from 'react-hot-toast'
 import LoadingSpinner from './LoadingSpinner'
@@ -66,16 +66,14 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       const registrations = Array.isArray(response.data?.data) ? response.data.data : 
                            Array.isArray(response.data) ? response.data : []
       setStudentRegistrations(registrations)
-      
-      // Clear selected courses when registrations are refreshed
       setSelectedCourses([])
     } catch (error) {
-      console.error('Error fetching student registrations:', error);
       setStudentRegistrations([])
     } finally {
       setLoadingRegistrations(false)
     }
   }
+
   const handleCourseToggle = (courseId) => {
     setSelectedCourses(prev => {
       if (prev.includes(courseId)) {
@@ -101,14 +99,12 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
           gender: data.gender
         })
         
-        // Enroll student in selected courses
         if (selectedCourses.length > 0) {
           const createdStudent = studentResponse.data.student
           try {
             await studentsAPI.enrollInCourses(createdStudent.id, selectedCourses)
             toast.success(`Student created and enrolled in ${selectedCourses.length} course${selectedCourses.length !== 1 ? 's' : ''}!`)
           } catch (enrollError) {
-            console.error('Error enrolling in courses:', enrollError)
             toast.success('Student created successfully!')
             toast.error('Some courses could not be enrolled. Please check manually.')
           }
@@ -128,7 +124,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       }
       onSuccess()
     } catch (error) {
-      console.error(`Error ${mode === 'create' ? 'creating' : 'updating'} student:`, error);
       const message = error.response?.data?.message || 
         error.response?.data?.error || 
         `Failed to ${mode === 'create' ? 'create' : 'update'} student. Please try again.`
@@ -148,7 +143,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       toast.success('Course dropped successfully')
       fetchStudentRegistrations()
     } catch (error) {
-      console.error('Error dropping course:', error)
       toast.error('Failed to drop course')
     }
   }
@@ -167,7 +161,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
       setShowCourseSelection(false)
       fetchStudentRegistrations()
     } catch (error) {
-      console.error('Error enrolling in courses:', error)
       const message = error.response?.data?.message || 'Failed to enroll in courses'
       toast.error(message)
     } finally {
@@ -181,7 +174,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
 
   const handleCancelEdit = () => {
     setIsEditing(false)
-    // Reset form to original values
     if (student) {
       setValue('firstName', student.first_name || '')
       setValue('lastName', student.last_name || '')
@@ -202,15 +194,12 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        {/* Background overlay */}
         <div 
           className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 backdrop-blur-sm"
           onClick={onClose}
         />
 
-        {/* Modal */}
         <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
-          {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
@@ -242,10 +231,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
             </div>
           </div>
 
-          {/* Content */}
           <form onSubmit={handleSubmit(onSubmit)} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* First Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   First Name *
@@ -265,7 +252,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Last Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Last Name *
@@ -285,7 +271,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Student ID */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Student ID *
@@ -305,7 +290,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Email */}
               <div className="lg:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Email Address *
@@ -334,7 +318,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 )}
               </div>
 
-              {/* Phone */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number
@@ -351,7 +334,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Date of Birth */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Date of Birth
@@ -367,7 +349,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Gender */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Gender
@@ -385,9 +366,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </select>
               </div>
 
-              {/* Course Enrollment (only for create mode) */}
               {mode === 'create' && (
-                <>
                 <div className="md:col-span-2 lg:col-span-3">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Enroll in Courses (Optional)
@@ -434,9 +413,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                     </div>
                   )}
                 </div>
-                </>
               )}
-              {/* Address */}
+
               <div className="md:col-span-2 lg:col-span-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Address
@@ -453,12 +431,11 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               </div>
 
-              {/* Current Registrations (only for view/edit mode) */}
               {(mode === 'view' || mode === 'edit') && student && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="flex items-center justify-between mb-4">
                     <label className="block text-sm font-semibold text-gray-700">
-                      <span>Current Course Registrations</span>
+                      Current Course Registrations
                     </label>
                     {isEditing && (
                       <button
@@ -548,7 +525,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                     )}
                   </div>
                   
-                  {/* Add Course Selection for Edit Mode */}
                   {isEditing && studentRegistrations.length > 0 && !showCourseSelection && (
                     <div className="mt-4">
                       <button
@@ -564,7 +540,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 </div>
               )}
               
-              {/* Course Selection Modal for Edit Mode */}
               {isEditing && showCourseSelection && (
                 <div className="md:col-span-2 lg:col-span-3">
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
@@ -638,23 +613,23 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                           Cancel
                         </button>
                         <button
-                        type="button"
-                        onClick={handleAddCourses}
-                        disabled={selectedCourses.length === 0 || loading}
-                        className="btn btn-primary text-sm py-2 px-4 disabled:opacity-50 flex items-center space-x-2"
-                      >
-                        {loading ? (
-                          <>
-                            <LoadingSpinner size="sm" />
-                            <span>Adding...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="h-4 w-4" />
-                            <span>Add Selected</span>
-                          </>
-                        )}
-                      </button>
+                          type="button"
+                          onClick={handleAddCourses}
+                          disabled={selectedCourses.length === 0 || loading}
+                          className="btn btn-primary text-sm py-2 px-4 disabled:opacity-50 flex items-center space-x-2"
+                        >
+                          {loading ? (
+                            <>
+                              <LoadingSpinner size="sm" />
+                              <span>Adding...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4" />
+                              <span>Add Selected</span>
+                            </>
+                          )}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -662,7 +637,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
               )}
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
               {isEditing ? (
                 <>

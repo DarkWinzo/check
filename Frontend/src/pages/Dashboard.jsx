@@ -7,36 +7,16 @@ import {
   BookOpen, 
   GraduationCap, 
   TrendingUp, 
-  Calendar,
-  Award,
-  Target,
-  BarChart3,
-  PieChart,
   Activity,
-  Zap,
-  Star,
   ArrowUp,
-  ArrowDown,
-  Eye,
-  Filter,
-  Download,
   RefreshCw,
   ChevronRight,
-  Sparkles,
-  Globe,
-  Clock,
-  UserCheck,
-  BookMarked,
-  Trophy,
-  Flame,
-  Heart,
-  Lightbulb,
   Server,
   Database,
   Wifi,
   HardDrive,
-  Cpu,
-  MemoryStick
+  MemoryStick,
+  Cpu
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -50,8 +30,8 @@ import {
   Cell,
   LineChart,
   Line,
-  Area,
   AreaChart,
+  Area,
   Pie
 } from 'recharts'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -90,12 +70,11 @@ const Dashboard = () => {
     fetchDashboardData()
     fetchSystemMetrics()
     
-    // Set up auto-refresh every 30 seconds
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true) // Silent refresh
-        fetchSystemMetrics(true) // Silent refresh
+        fetchDashboardData(true)
+        fetchSystemMetrics(true)
       }, 30000)
     }
     
@@ -112,7 +91,6 @@ const Dashboard = () => {
         setLoading(true)
       }
       
-      // Fetch real data with higher limits to get actual data
       const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
         studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
         coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
@@ -132,11 +110,9 @@ const Dashboard = () => {
         activeEnrollments: activeEnrollments
       })
 
-      // Generate analytics data based on real data
       generateRealAnalyticsData(students, courses, registrations)
       
       if (silent) {
-        // Show a subtle notification for auto-refresh
         const event = new CustomEvent('systemNotification', {
           detail: { 
             title: 'Dashboard Updated', 
@@ -148,7 +124,6 @@ const Dashboard = () => {
       }
       
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
       if (!silent) {
         toast.error('Failed to load dashboard data')
       }
@@ -161,17 +136,13 @@ const Dashboard = () => {
 
   const fetchSystemMetrics = async (silent = false) => {
     try {
-      // Calculate real system metrics based on actual data
       const startTime = performance.now()
       
-      // Test API response time
       await fetch('/api/health').catch(() => {})
       const apiResponseTime = Math.round(performance.now() - startTime)
       
-      // Calculate uptime (time since page load)
       const uptimeHours = ((Date.now() - (window.pageLoadTime || Date.now())) / (1000 * 60 * 60))
       
-      // Simulate realistic metrics based on actual usage
       const memoryUsage = Math.min(50 + (stats.totalStudents + stats.totalCourses) * 0.5, 85)
       const cpuUsage = Math.min(15 + (stats.totalRegistrations * 0.3), 45)
       const networkLatency = apiResponseTime > 1000 ? 'Slow' : apiResponseTime > 500 ? 'Fair' : 'Fast'
@@ -188,8 +159,6 @@ const Dashboard = () => {
       })
       
     } catch (error) {
-      console.error('Error fetching system metrics:', error)
-      // Set fallback values
       setSystemMetrics(prev => ({
         ...prev,
         lastUpdated: new Date()
@@ -198,16 +167,9 @@ const Dashboard = () => {
   }
 
   const generateRealAnalyticsData = (students, courses, registrations) => {
-    // Real enrollment trends based on registration dates
     const enrollmentTrends = generateEnrollmentTrends(registrations)
-    
-    // Real course distribution based on actual courses
     const courseDistribution = generateCourseDistribution(courses, registrations)
-    
-    // Real status distribution based on actual registration statuses
     const statusDistribution = generateStatusDistribution(registrations)
-    
-    // Real growth data based on creation dates
     const growthData = generateGrowthData(students, courses, registrations)
 
     setAnalyticsData({
@@ -331,7 +293,6 @@ const Dashboard = () => {
         navigate('/courses')
         break
       case 'analytics':
-        // Show analytics modal or navigate to analytics page
         toast.success('Analytics feature coming soon!')
         break
       default:
@@ -346,13 +307,11 @@ const Dashboard = () => {
       onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-        {/* Auto-refresh indicator */}
         <div className="absolute top-2 right-2">
           <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
                title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
         </div>
         
-        {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
             <Icon className="h-6 w-6 text-white" />
@@ -361,13 +320,12 @@ const Dashboard = () => {
             <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-semibold ${
               trend === 'up' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'
             }`}>
-              {trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              <ArrowUp className="h-3 w-3" />
               <span>{trendValue}%</span>
             </div>
           )}
         </div>
         
-        {/* Content */}
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-gray-600">{title}</h3>
           <div className="text-3xl font-bold text-gray-900">
@@ -375,7 +333,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Hover effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </div>
     </div>
@@ -593,7 +550,6 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
@@ -605,7 +561,6 @@ const Dashboard = () => {
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
           
-          {/* Auto-refresh status */}
           <div className="mt-4 flex items-center justify-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} />
             <span className="text-sm text-gray-500">
@@ -620,7 +575,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
@@ -664,13 +618,11 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Analytics Section */}
         <div className="space-y-6">
-          {/* Analytics Navigation */}
           <div className="flex flex-wrap gap-3 justify-center">
             {[
-              { id: 'enrollment', label: 'Enrollment Analytics', icon: BarChart3, color: 'blue' },
-              { id: 'distribution', label: 'Course Distribution', icon: PieChart, color: 'green' },
+              { id: 'enrollment', label: 'Enrollment Analytics', icon: Activity, color: 'blue' },
+              { id: 'distribution', label: 'Course Distribution', icon: Activity, color: 'green' },
               { id: 'growth', label: 'Growth Trends', icon: TrendingUp, color: 'purple' },
               { id: 'status', label: 'Status Overview', icon: Activity, color: 'pink' }
             ].map((item) => (
@@ -678,7 +630,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  // Trigger a subtle refresh when switching analytics
                   fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
@@ -696,7 +647,6 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Analytics Content */}
           <AnalyticsCard
             title={
               selectedAnalytic === 'enrollment' ? 'Course Enrollment Analytics' :
@@ -704,12 +654,7 @@ const Dashboard = () => {
               selectedAnalytic === 'growth' ? 'Growth Trends Over Time' :
               'Enrollment Status Overview'
             }
-            icon={
-              selectedAnalytic === 'enrollment' ? BarChart3 :
-              selectedAnalytic === 'distribution' ? PieChart :
-              selectedAnalytic === 'growth' ? TrendingUp :
-              Activity
-            }
+            icon={Activity}
             color={
               selectedAnalytic === 'enrollment' ? 'blue' :
               selectedAnalytic === 'distribution' ? 'green' :
@@ -721,27 +666,26 @@ const Dashboard = () => {
           </AnalyticsCard>
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { 
               title: 'Student Management', 
               description: 'Manage student profiles and enrollments',
-              icon: UserCheck,
+              icon: Users,
               color: 'from-blue-500 to-blue-600',
               action: 'students'
             },
             { 
               title: 'Course Management', 
               description: 'Create and manage course offerings',
-              icon: BookMarked,
+              icon: BookOpen,
               color: 'from-green-500 to-green-600',
               action: 'courses'
             },
             { 
               title: 'Analytics Reports', 
               description: 'View detailed analytics and reports',
-              icon: Trophy,
+              icon: Activity,
               color: 'from-purple-500 to-purple-600',
               action: 'analytics'
             }
@@ -768,10 +712,8 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* System Status */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
           <div className="p-6">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
@@ -783,7 +725,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Status Indicator */}
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
@@ -798,9 +739,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* System Metrics Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* Uptime */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-green-500 rounded-lg shadow-sm">
@@ -821,7 +760,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Memory Usage */}
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-blue-500 rounded-lg shadow-sm">
@@ -853,7 +791,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* CPU Usage */}
               <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border border-purple-200 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-purple-500 rounded-lg shadow-sm">
@@ -885,7 +822,6 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              {/* Network Status */}
               <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-xl p-4 border border-orange-200 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-orange-500 rounded-lg shadow-sm">
@@ -924,9 +860,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Additional Metrics */}
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Database Connections */}
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
@@ -940,7 +874,6 @@ const Dashboard = () => {
                 <div className="text-xs text-indigo-600">Active connections</div>
               </div>
               
-              {/* Storage Usage */}
               <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-4 border border-teal-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
@@ -956,7 +889,6 @@ const Dashboard = () => {
                 <div className="text-xs text-teal-600">Data usage</div>
               </div>
               
-              {/* Active Sessions */}
               <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-xl p-4 border border-pink-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
@@ -971,7 +903,6 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Footer Actions */}
             <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-200">
               <div className="flex items-center space-x-6">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">

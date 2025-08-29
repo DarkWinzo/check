@@ -108,38 +108,15 @@
     animation: scaleIn 0.5s ease-out forwards;
   }
 
-/* Profile menu animations */
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.95);
+  .animate-slide-in-up {
+    animation: slideInUp 0.3s ease-out forwards;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+
+  .animate-shimmer-button {
+    animation: shimmerButton 0.7s ease-in-out;
   }
 }
 
-.animate-slide-in-up {
-  animation: slideInUp 0.3s ease-out forwards;
-}
-
-/* Shimmer effect for buttons */
-@keyframes shimmerButton {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-shimmer-button {
-  animation: shimmerButton 0.7s ease-in-out;
-}
-}
-
-/* Glass card hover effect */
 .glass-card:hover {
   box-shadow: 
     0 50px 100px -20px rgba(0, 0, 0, 0.25), 
@@ -148,7 +125,6 @@
     0 20px 40px -10px rgba(59, 130, 246, 0.15);
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -168,7 +144,6 @@
   background: linear-gradient(135deg, #94a3b8, #64748b);
 }
 
-/* Enhanced animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -212,7 +187,6 @@
   animation: spin 1s linear infinite;
 }
 
-/* Pulse animation */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
@@ -226,7 +200,6 @@
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Floating animation */
 @keyframes float {
   0%, 100% {
     transform: translateY(0px) rotate(0deg);
@@ -240,7 +213,6 @@
   animation: float 4s ease-in-out infinite;
 }
 
-/* Bounce enhanced */
 @keyframes bounceEnhanced {
   0%, 20%, 53%, 80%, 100% {
     transform: translate3d(0,0,0) scale(1);
@@ -260,7 +232,6 @@
   animation: bounceEnhanced 2s infinite;
 }
 
-/* Glow effect */
 @keyframes glow {
   0%, 100% {
     box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
@@ -274,7 +245,6 @@
   animation: glow 2s ease-in-out infinite;
 }
 
-/* Shimmer effect */
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -290,7 +260,6 @@
   animation: shimmer 2s infinite;
 }
 
-/* Line clamp utilities */
 .line-clamp-1 {
   overflow: hidden;
   display: -webkit-box;
@@ -312,7 +281,6 @@
   -webkit-line-clamp: 3;
 }
 
-/* Modern shadows */
 .shadow-modern {
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
@@ -321,7 +289,6 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
-/* Enhanced 3D shadows */
 .shadow-3xl {
   box-shadow: 
     0 35px 60px -12px rgba(0, 0, 0, 0.25), 
@@ -337,7 +304,6 @@
     0 20px 40px -10px rgba(59, 130, 246, 0.15);
 }
 
-/* Glass morphism effects */
 .glass-morphism {
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(20px) saturate(180%);
@@ -350,12 +316,10 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Improved focus styles */
 .focus-ring {
   @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-white;
 }
 
-/* Enhanced button hover effects */
 .btn:hover {
   transform: translateY(-2px) scale(1.02);
 }
@@ -364,7 +328,6 @@
   transform: translateY(0) scale(0.98);
 }
 
-/* Gradient animations */
 @keyframes gradientShift {
   0%, 100% {
     background-position: 0% 50%;
@@ -379,7 +342,6 @@
   animation: gradientShift 3s ease infinite;
 }
 
-/* Modern profile menu animations */
 @keyframes slideInUp {
   from {
     opacity: 0;
@@ -391,16 +353,12 @@
   }
 }
 
-.animate-slide-in-up {
-  animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-@keyframes gradientShift {
-  0%, 100% {
-    background-position: 0% 50%;
+@keyframes shimmerButton {
+  0% {
+    transform: translateX(-100%);
   }
-  50% {
-    background-position: 100% 50%;
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -422,7 +380,6 @@
   animation: floatGentle 3s ease-in-out infinite;
 }
 
-/* Text effects */
 .text-shadow-lg {
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
 }
@@ -431,7 +388,6 @@
   text-shadow: 0 8px 16px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Enhanced transitions */
 .transition-all-300 {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -444,7 +400,6 @@
   transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Responsive modal fixes */
 @media (max-width: 768px) {
   .fixed.inset-0.z-\\[60\\] .inline-block {
     margin: 1rem;

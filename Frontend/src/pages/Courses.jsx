@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { coursesAPI, registrationsAPI, studentsAPI } from '../services/api'
-import { BookOpen, Users, Clock, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, Calendar, User, Trash2, UserCheck, Mail, Phone, RefreshCw } from 'lucide-react'
+import { coursesAPI, registrationsAPI } from '../services/api'
+import { BookOpen, Users, Plus, Search, Filter, Edit, Eye, GraduationCap, Star, User, Trash2, UserCheck, Mail, RefreshCw } from 'lucide-react'
 import toast from 'react-hot-toast'
 import LoadingSpinner from '../components/LoadingSpinner'
 import CourseModal from '../components/CourseModal'
@@ -13,18 +13,15 @@ const Courses = () => {
   const [registering, setRegistering] = useState({})
   const [deleteLoading, setDeleteLoading] = useState({})
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedDepartment, setSelectedDepartment] = useState('')
-  const [selectedSemester, setSelectedSemester] = useState('')
   const [pagination, setPagination] = useState({})
   const [showModal, setShowModal] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState(null)
-  const [modalMode, setModalMode] = useState('create') // 'create', 'edit', 'view'
+  const [modalMode, setModalMode] = useState('create')
   const [showEnrollmentModal, setShowEnrollmentModal] = useState(false)
   const [enrolledStudents, setEnrolledStudents] = useState([])
   const [enrollmentLoading, setEnrollmentLoading] = useState(false)
 
   useEffect(() => {
-    // Add a small delay to ensure component is mounted
     const timer = setTimeout(() => {
       fetchCourses()
     }, 100);
@@ -44,23 +41,16 @@ const Courses = () => {
           search: searchTerm
         }
         
-        console.log('Fetching courses with params:', params);
         const response = await coursesAPI.getAll(params)
-        console.log('Courses fetch successful:', response.data);
         setCourses(response.data.courses || [])
         setPagination(response.data.pagination || {})
       } catch (error) {
-        console.error('Error fetching courses (attempt ' + (retryCount + 1) + '):', error);
-        
-        // Retry logic for network errors
         if (!error.response && retryCount < maxRetries - 1) {
           retryCount++;
-          console.log(`Retrying courses fetch... (${retryCount}/${maxRetries})`);
           await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
           return attemptFetch();
         }
         
-        // Show appropriate error message
         let message = 'Failed to fetch courses. Please try again.';
         
         if (!error.response) {
@@ -91,7 +81,6 @@ const Courses = () => {
       await registrationsAPI.create({ courseId })
       toast.success('Successfully registered for course!')
       
-      // Refresh courses to update enrollment count
       fetchCourses()
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to register for course. Please try again.'
@@ -146,7 +135,6 @@ const Courses = () => {
       const response = await coursesAPI.getRegistrations(course.id)
       setEnrolledStudents(response.data || [])
     } catch (error) {
-      console.error('Error fetching course enrollments:', error);
       const message = error.response?.data?.message || 'Failed to fetch course enrollments'
       toast.error(message)
       setEnrolledStudents([])
@@ -177,7 +165,6 @@ const Courses = () => {
             onClick={() => setShowEnrollmentModal(false)}
           />
           <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
-            {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-green-100">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg">
@@ -196,9 +183,7 @@ const Courses = () => {
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6">
-              {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 rounded-xl p-4">
                   <div className="text-2xl font-bold text-blue-600">{enrolledStudents.length}</div>
@@ -216,7 +201,6 @@ const Courses = () => {
                 </div>
               </div>
 
-              {/* Enrolled Students List */}
               <div className="space-y-4">
                 <h4 className="text-lg font-bold text-gray-900 mb-4">Enrolled Students</h4>
                 
@@ -278,7 +262,6 @@ const Courses = () => {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
               <button
                 onClick={() => setShowEnrollmentModal(false)}
@@ -293,9 +276,6 @@ const Courses = () => {
     )
   }
 
-  const departments = [...new Set(courses.map(course => course.department).filter(Boolean))]
-  const semesters = [...new Set(courses.map(course => course.semester).filter(Boolean))]
-
   if (loading && courses.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -309,7 +289,6 @@ const Courses = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3 mb-2">
@@ -334,7 +313,6 @@ const Courses = () => {
         )}
       </div>
 
-      {/* Filters */}
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -379,7 +357,6 @@ const Courses = () => {
         </div>
       </div>
 
-      {/* Courses Grid */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <LoadingSpinner size="lg" />
@@ -388,7 +365,6 @@ const Courses = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {courses.map((course) => (
             <div key={course.id} className="glass-card rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden">
-              {/* Course Header */}
               <div className="bg-gradient-to-r from-green-50 to-green-100 p-6 border-b border-green-200">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -410,7 +386,6 @@ const Courses = () => {
                 </div>
               </div>
 
-              {/* Course Content */}
               <div className="p-6">
                 {course.description && (
                   <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
@@ -422,7 +397,7 @@ const Courses = () => {
                   {course.duration && (
                     <div className="flex items-center text-sm text-gray-700">
                       <div className="p-1 bg-orange-100 rounded-lg mr-3">
-                        <Clock className="h-3 w-3 text-orange-600" />
+                        <BookOpen className="h-3 w-3 text-orange-600" />
                       </div>
                       <span>{course.duration}</span>
                     </div>
@@ -436,10 +411,8 @@ const Courses = () => {
                       <span className="font-medium">{course.instructor}</span>
                     </div>
                   )}
-                  
                 </div>
 
-                {/* Enrollment Status */}
                 <div className="bg-gray-50 rounded-xl p-4 mb-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -465,7 +438,6 @@ const Courses = () => {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2">
                   {user?.role === 'admin' ? (
                     <>
@@ -555,7 +527,6 @@ const Courses = () => {
             }
           </p>
           
-          {/* Retry button for connection issues */}
           <div className="flex flex-col items-center space-y-4">
             <button 
               onClick={() => fetchCourses()}
@@ -564,15 +535,6 @@ const Courses = () => {
               <RefreshCw className="h-4 w-4" />
               <span>Retry Loading</span>
             </button>
-            
-            <div className="text-sm text-gray-500 max-w-md">
-              <p>If you're seeing connection errors:</p>
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Check if the backend server is running on port 5000</li>
-                <li>Verify your internet connection</li>
-                <li>Try refreshing the page</li>
-              </ul>
-            </div>
           </div>
           
           {user?.role === 'admin' && !searchTerm && (
@@ -587,7 +549,6 @@ const Courses = () => {
         </div>
       )}
 
-      {/* Pagination */}
       {pagination.totalPages > 1 && (
         <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
           <div className="text-sm text-gray-700">
@@ -616,7 +577,6 @@ const Courses = () => {
         </div>
       )}
 
-      {/* Course Modal */}
       {showModal && (
         <CourseModal
           isOpen={showModal}
@@ -627,7 +587,6 @@ const Courses = () => {
         />
       )}
 
-      {/* Enrollment Modal */}
       <EnrollmentModal />
     </div>
   )
