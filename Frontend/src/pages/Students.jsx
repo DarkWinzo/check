@@ -157,8 +157,8 @@ const Students = () => {
       {/* Search and Filters */}
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="relative lg:col-span-3">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -171,7 +171,7 @@ const Students = () => {
               />
             </div>
             
-            <div className="flex items-center justify-end lg:col-span-2">
+            <div className="flex items-center justify-end lg:justify-start">
               {searchTerm && (
                 <button
                   onClick={() => {

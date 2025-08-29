@@ -209,15 +209,15 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
         />
 
         {/* Modal */}
-        <div className="inline-block w-full max-w-4xl my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl">
+        <div className="inline-block w-full max-w-4xl my-4 lg:my-8 overflow-hidden text-left align-middle transition-all transform bg-white shadow-2xl rounded-2xl mx-4 lg:mx-0">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+          <div className="flex items-center justify-between p-4 lg:p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
                 <User className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-gray-900">{modalTitle}</h3>
+                <h3 className="text-lg lg:text-xl font-bold text-gray-900">{modalTitle}</h3>
                 {student && (
                   <p className="text-sm text-gray-600">ID: {student.student_id}</p>
                 )}
@@ -243,8 +243,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
           </div>
 
           {/* Content */}
-          <form onSubmit={handleSubmit(onSubmit)} className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="p-4 lg:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
               {/* First Name */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">

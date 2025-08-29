@@ -337,8 +337,8 @@ const Courses = () => {
       {/* Filters */}
       <div className="glass-card rounded-2xl border border-white/20 shadow-xl">
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative lg:col-span-2">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="relative lg:col-span-3">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-gray-400" />
               </div>
@@ -351,7 +351,7 @@ const Courses = () => {
               />
             </div>
             
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-end lg:justify-start">
               {searchTerm && (
                 <button
                   onClick={() => {
@@ -385,7 +385,7 @@ const Courses = () => {
           <LoadingSpinner size="lg" />
         </div>
       ) : courses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-8">
           {courses.map((course) => (
             <div key={course.id} className="glass-card rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 group overflow-hidden">
               {/* Course Header */}
@@ -400,7 +400,7 @@ const Courses = () => {
                         Course
                       </span>
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-200">
+                    <h3 className="text-base lg:text-lg font-bold text-gray-900 group-hover:text-green-700 transition-colors duration-200 line-clamp-2">
                       {course.course_name}
                     </h3>
                   </div>

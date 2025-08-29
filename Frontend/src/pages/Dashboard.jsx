@@ -591,7 +591,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center">
@@ -599,9 +599,9 @@ const Dashboard = () => {
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
               <Activity className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl lg:text-4xl font-bold text-gray-900">Dashboard</h1>
           </div>
-          <p className="text-xl text-gray-600">
+          <p className="text-lg lg:text-xl text-gray-600">
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
           
@@ -621,7 +621,7 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           <StatCard
             title="Total Students"
             value={stats.totalStudents}
@@ -667,7 +667,7 @@ const Dashboard = () => {
         {/* Analytics Section */}
         <div className="space-y-6">
           {/* Analytics Navigation */}
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-2 lg:gap-3 justify-center">
             {[
               { id: 'enrollment', label: 'Enrollment Analytics', icon: BarChart3, color: 'blue' },
               { id: 'distribution', label: 'Course Distribution', icon: PieChart, color: 'green' },
@@ -681,7 +681,7 @@ const Dashboard = () => {
                   // Trigger a subtle refresh when switching analytics
                   fetchDashboardData(true)
                 }}
-                className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
+                className={`px-3 lg:px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform text-sm lg:text-base ${
                   selectedAnalytic === item.id
                     ? item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' :
                       item.color === 'green' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' :
@@ -691,7 +691,8 @@ const Dashboard = () => {
                 }`}
               >
                 <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <span className="hidden sm:inline">{item.label}</span>
+                <span className="sm:hidden">{item.id === 'enrollment' ? 'Analytics' : item.id === 'distribution' ? 'Distribution' : item.id === 'growth' ? 'Growth' : 'Status'}</span>
               </button>
             ))}
           </div>
