@@ -9,9 +9,9 @@ import Students from './pages/Students'
 import LoadingSpinner from './components/LoadingSpinner'
 
 function App() {
-  const { user, loading } = useAuth()
+  const { user, loading, initialized } = useAuth()
 
-  if (loading) {
+  if (loading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

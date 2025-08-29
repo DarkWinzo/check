@@ -14,23 +14,31 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   useEffect(() => {
-    checkAuthStatus()
+    if (!initialized) {
+      checkAuthStatus()
+    }
   }, [])
 
   const checkAuthStatus = async () => {
     try {
+      setLoading(true)
       const token = localStorage.getItem('token')
       if (!token) {
+        setInitialized(true)
         setLoading(false)
         return
       }
 
       const response = await authAPI.verify()
       setUser(response.data.user)
+      setInitialized(true)
     } catch (error) {
       localStorage.removeItem('token')
+      setUser(null)
+      setInitialized(true)
     } finally {
       setLoading(false)
     }
@@ -43,6 +51,7 @@ export const AuthProvider = ({ children }) => {
       
       localStorage.setItem('token', token)
       setUser(user)
+      setInitialized(true)
       
       return { success: true }
     } catch (error) {
@@ -58,11 +67,13 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token')
     setUser(null)
+    setInitialized(true)
   }
 
   const value = {
     user,
     loading,
+    initialized,
     login,
     logout,
     checkAuthStatus

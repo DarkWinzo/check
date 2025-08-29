@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { useNavigate } from 'react-router-dom'
 import { studentsAPI, coursesAPI, registrationsAPI } from '../services/api'
 import { 
   Users, 
@@ -39,7 +38,6 @@ import toast from 'react-hot-toast'
 
 const Dashboard = () => {
   const { user } = useAuth()
-  const navigate = useNavigate()
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalCourses: 0,
@@ -47,6 +45,7 @@ const Dashboard = () => {
     activeEnrollments: 0
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
   const [analyticsData, setAnalyticsData] = useState({
     enrollmentTrends: [],
@@ -56,6 +55,7 @@ const Dashboard = () => {
   })
   const [selectedAnalytic, setSelectedAnalytic] = useState('enrollment')
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true)
+  const [retryCount, setRetryCount] = useState(0)
   const [systemMetrics, setSystemMetrics] = useState({
     uptime: 0,
     memoryUsage: 0,
@@ -67,14 +67,15 @@ const Dashboard = () => {
   })
 
   useEffect(() => {
-    fetchDashboardData()
-    fetchSystemMetrics()
+    initializeDashboard()
     
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true)
-        fetchSystemMetrics(true)
+        if (!loading) {
+          fetchDashboardData(true)
+          fetchSystemMetrics(true)
+        }
       }, 30000)
     }
     
@@ -83,23 +84,58 @@ const Dashboard = () => {
         clearInterval(interval)
       }
     }
-  }, [autoRefreshEnabled])
+  }, [autoRefreshEnabled, loading])
+
+  const initializeDashboard = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      await Promise.all([
+        fetchDashboardData(false),
+        fetchSystemMetrics(false)
+      ])
+      setRetryCount(0)
+    } catch (error) {
+      setError('Failed to load dashboard data')
+      if (retryCount < 3) {
+        setTimeout(() => {
+          setRetryCount(prev => prev + 1)
+          initializeDashboard()
+        }, 2000 * (retryCount + 1))
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const fetchDashboardData = async (silent = false) => {
     try {
       if (!silent) {
         setLoading(true)
+        setError(null)
       }
       
-      const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-        studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
-        coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
-        registrationsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { registrations: [] } }))
+      const fetchWithRetry = async (apiCall, retries = 2) => {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            return await apiCall()
+          } catch (error) {
+            if (i === retries) throw error
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
+          }
+        }
+      }
+
+      const [studentsRes, coursesRes, registrationsRes] = await Promise.allSettled([
+        fetchWithRetry(() => studentsAPI.getAll({ limit: 1000 })),
+        fetchWithRetry(() => coursesAPI.getAll({ limit: 1000 })),
+        fetchWithRetry(() => registrationsAPI.getAll({ limit: 1000 }))
       ])
 
-      const students = studentsRes.data.students || []
-      const courses = coursesRes.data.courses || []
-      const registrations = registrationsRes.data.registrations || []
+      const students = studentsRes.status === 'fulfilled' ? (studentsRes.value?.data?.students || []) : []
+      const courses = coursesRes.status === 'fulfilled' ? (coursesRes.value?.data?.courses || []) : []
+      const registrations = registrationsRes.status === 'fulfilled' ? (registrationsRes.value?.data?.registrations || []) : []
 
       const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
 
@@ -124,9 +160,11 @@ const Dashboard = () => {
       }
       
     } catch (error) {
+      setError('Failed to load dashboard data')
       if (!silent) {
-        toast.error('Failed to load dashboard data')
+        console.error('Dashboard data fetch error:', error)
       }
+      throw error
     } finally {
       if (!silent) {
         setLoading(false)
@@ -138,7 +176,12 @@ const Dashboard = () => {
     try {
       const startTime = performance.now()
       
-      await fetch('/api/health').catch(() => {})
+      try {
+        await fetch('/api/health', { timeout: 5000 })
+      } catch (error) {
+        console.warn('Health check failed:', error)
+      }
+      
       const apiResponseTime = Math.round(performance.now() - startTime)
       
       const uptimeHours = ((Date.now() - (window.pageLoadTime || Date.now())) / (1000 * 60 * 60))
@@ -159,6 +202,7 @@ const Dashboard = () => {
       })
       
     } catch (error) {
+      console.warn('System metrics fetch error:', error)
       setSystemMetrics(prev => ({
         ...prev,
         lastUpdated: new Date()
@@ -167,6 +211,7 @@ const Dashboard = () => {
   }
 
   const generateRealAnalyticsData = (students, courses, registrations) => {
+    try {
     const enrollmentTrends = generateEnrollmentTrends(registrations)
     const courseDistribution = generateCourseDistribution(courses, registrations)
     const statusDistribution = generateStatusDistribution(registrations)
@@ -178,9 +223,20 @@ const Dashboard = () => {
       statusDistribution,
       growthData
     })
+    } catch (error) {
+      console.error('Analytics generation error:', error)
+      setAnalyticsData({
+        enrollmentTrends: [],
+        courseDistribution: [],
+        statusDistribution: [],
+        growthData: []
+      })
+    }
   }
 
   const generateEnrollmentTrends = (registrations) => {
+    if (!Array.isArray(registrations)) return []
+    
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
     const currentDate = new Date()
     const trends = []
@@ -190,6 +246,7 @@ const Dashboard = () => {
       const monthName = monthNames[date.getMonth()]
       
       const monthRegistrations = registrations.filter(reg => {
+        if (!reg.registration_date) return false
         const regDate = new Date(reg.registration_date)
         return regDate.getMonth() === date.getMonth() && regDate.getFullYear() === date.getFullYear()
       })
@@ -208,6 +265,8 @@ const Dashboard = () => {
   }
 
   const generateCourseDistribution = (courses, registrations) => {
+    if (!Array.isArray(courses)) return []
+    
     const departments = {}
     const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
     
@@ -227,6 +286,14 @@ const Dashboard = () => {
   }
 
   const generateStatusDistribution = (registrations) => {
+    if (!Array.isArray(registrations) || registrations.length === 0) {
+      return [
+        { name: 'Enrolled', value: 0, color: '#10b981' },
+        { name: 'Completed', value: 0, color: '#3b82f6' },
+        { name: 'Dropped', value: 0, color: '#ef4444' }
+      ]
+    }
+    
     const statusCounts = {
       enrolled: 0,
       completed: 0,
@@ -239,7 +306,7 @@ const Dashboard = () => {
       }
     })
 
-    const total = registrations.length || 1
+    const total = registrations.length
 
     return [
       { name: 'Enrolled', value: Math.round((statusCounts.enrolled / total) * 100), color: '#10b981' },
@@ -249,6 +316,10 @@ const Dashboard = () => {
   }
 
   const generateGrowthData = (students, courses, registrations) => {
+    if (!Array.isArray(students) || !Array.isArray(courses) || !Array.isArray(registrations)) {
+      return []
+    }
+    
     const weeks = []
     const currentDate = new Date()
 
@@ -256,9 +327,9 @@ const Dashboard = () => {
       const weekStart = new Date(currentDate.getTime() - (i * 7 * 24 * 60 * 60 * 1000))
       const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000))
 
-      const studentsCount = students.filter(s => new Date(s.created_at) <= weekEnd).length
-      const coursesCount = courses.filter(c => new Date(c.created_at) <= weekEnd).length
-      const registrationsCount = registrations.filter(r => new Date(r.registration_date) <= weekEnd).length
+      const studentsCount = students.filter(s => s.created_at && new Date(s.created_at) <= weekEnd).length
+      const coursesCount = courses.filter(c => c.created_at && new Date(c.created_at) <= weekEnd).length
+      const registrationsCount = registrations.filter(r => r.registration_date && new Date(r.registration_date) <= weekEnd).length
 
       weeks.push({
         period: `Week ${4 - i}`,
@@ -273,38 +344,25 @@ const Dashboard = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true)
+    setError(null)
     try {
-      await fetchDashboardData()
-      await fetchSystemMetrics()
+      await Promise.all([
+        fetchDashboardData(false),
+        fetchSystemMetrics(false)
+      ])
       toast.success('Dashboard refreshed successfully!')
     } catch (error) {
+      setError('Failed to refresh dashboard')
       toast.error('Failed to refresh dashboard')
     } finally {
       setTimeout(() => setRefreshing(false), 1000)
     }
   }
 
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'students':
-        navigate('/students')
-        break
-      case 'courses':
-        navigate('/courses')
-        break
-      case 'analytics':
-        toast.success('Analytics feature coming soon!')
-        break
-      default:
-        break
-    }
-  }
-
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick }) => (
+  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0 }) => (
     <div 
       className="relative group animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
       style={{ animationDelay: `${delay}ms` }}
-      onClick={onClick}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="absolute top-2 right-2">
@@ -381,8 +439,13 @@ const Dashboard = () => {
   )
 
   const renderAnalyticsContent = () => {
+    if (!analyticsData) return <div className="text-center py-8 text-gray-500">No data available</div>
+    
     switch (selectedAnalytic) {
       case 'enrollment':
+        if (!analyticsData.enrollmentTrends?.length) {
+          return <div className="text-center py-8 text-gray-500">No enrollment data available</div>
+        }
         return (
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={analyticsData.enrollmentTrends}>
@@ -428,6 +491,9 @@ const Dashboard = () => {
         )
       
       case 'distribution':
+        if (!analyticsData.courseDistribution?.length) {
+          return <div className="text-center py-8 text-gray-500">No course distribution data available</div>
+        }
         return (
           <ResponsiveContainer width="100%" height={300}>
             <RechartsPieChart>
@@ -457,6 +523,9 @@ const Dashboard = () => {
         )
       
       case 'growth':
+        if (!analyticsData.growthData?.length) {
+          return <div className="text-center py-8 text-gray-500">No growth data available</div>
+        }
         return (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={analyticsData.growthData}>
@@ -490,6 +559,9 @@ const Dashboard = () => {
         )
       
       case 'status':
+        if (!analyticsData.statusDistribution?.length) {
+          return <div className="text-center py-8 text-gray-500">No status data available</div>
+        }
         return (
           <div className="space-y-6">
             <ResponsiveContainer width="100%" height={200}>
@@ -532,7 +604,7 @@ const Dashboard = () => {
         )
       
       default:
-        return null
+        return <div className="text-center py-8 text-gray-500">Select an analytics view</div>
     }
   }
 
@@ -542,6 +614,30 @@ const Dashboard = () => {
         <div className="text-center">
           <LoadingSpinner size="xl" />
           <p className="mt-4 text-gray-600 text-lg">Loading Dashboard...</p>
+          {retryCount > 0 && (
+            <p className="mt-2 text-sm text-gray-500">Retry attempt {retryCount}/3</p>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-2xl flex items-center justify-center">
+            <Activity className="h-8 w-8 text-red-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Error</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={() => initializeDashboard()}
+            className="btn btn-primary"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry Loading
+          </button>
         </div>
       </div>
     )
@@ -584,7 +680,6 @@ const Dashboard = () => {
             trendValue={12}
             color="bg-gradient-to-r from-blue-500 to-blue-600"
             delay={0}
-            onClick={() => handleQuickAction('students')}
           />
           <StatCard
             title="Active Courses"
@@ -594,7 +689,6 @@ const Dashboard = () => {
             trendValue={8}
             color="bg-gradient-to-r from-green-500 to-green-600"
             delay={100}
-            onClick={() => handleQuickAction('courses')}
           />
           <StatCard
             title="Total Enrollments"
@@ -604,7 +698,6 @@ const Dashboard = () => {
             trendValue={15}
             color="bg-gradient-to-r from-purple-500 to-purple-600"
             delay={200}
-            onClick={() => handleRefresh()}
           />
           <StatCard
             title="Active Enrollments"
@@ -614,7 +707,6 @@ const Dashboard = () => {
             trendValue={23}
             color="bg-gradient-to-r from-pink-500 to-pink-600"
             delay={300}
-            onClick={() => handleRefresh()}
           />
         </div>
 
@@ -630,7 +722,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
                   selectedAnalytic === item.id
@@ -664,52 +755,6 @@ const Dashboard = () => {
           >
             {renderAnalyticsContent()}
           </AnalyticsCard>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { 
-              title: 'Student Management', 
-              description: 'Manage student profiles and enrollments',
-              icon: Users,
-              color: 'from-blue-500 to-blue-600',
-              action: 'students'
-            },
-            { 
-              title: 'Course Management', 
-              description: 'Create and manage course offerings',
-              icon: BookOpen,
-              color: 'from-green-500 to-green-600',
-              action: 'courses'
-            },
-            { 
-              title: 'Analytics Reports', 
-              description: 'View detailed analytics and reports',
-              icon: Activity,
-              color: 'from-purple-500 to-purple-600',
-              action: 'analytics'
-            }
-          ].map((action, index) => (
-            <button
-              key={index}
-              onClick={() => handleQuickAction(action.action)}
-              className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group text-left w-full hover:scale-105 transform"
-            >
-              <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                <action.icon className="h-6 w-6 text-white" />
-              </div>
-              
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200">
-                {action.title}
-              </h3>
-              <p className="text-gray-600 mb-4">{action.description}</p>
-              
-              <div className="flex items-center text-blue-600 font-semibold group-hover:text-blue-700 transition-colors duration-200">
-                <span>Access Now</span>
-                <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
-              </div>
-            </button>
-          ))}
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
