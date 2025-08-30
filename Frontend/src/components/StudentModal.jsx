@@ -13,6 +13,8 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
   const [studentRegistrations, setStudentRegistrations] = useState([])
   const [loadingRegistrations, setLoadingRegistrations] = useState(false)
   const [showCourseSelection, setShowCourseSelection] = useState(false)
+  const [nextStudentId, setNextStudentId] = useState('')
+  const [loadingStudentId, setLoadingStudentId] = useState(false)
 
   const {
     register,
@@ -25,6 +27,9 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
   useEffect(() => {
     if (isOpen) {
       fetchCourses()
+      if (mode === 'create') {
+        fetchNextStudentId()
+      }
       if (student && (mode === 'view' || mode === 'edit')) {
         fetchStudentRegistrations()
       }
@@ -47,6 +52,36 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
     }
   }, [student, isOpen, setValue, reset, mode])
 
+  const fetchNextStudentId = async () => {
+    try {
+      setLoadingStudentId(true)
+      const response = await studentsAPI.getAll({ limit: 1 })
+      
+      // Get the last student to determine next ID
+      const allStudentsResponse = await studentsAPI.getAll({ limit: 1000 })
+      const allStudents = allStudentsResponse.data.students || []
+      
+      // Find the highest student ID
+      let maxNumber = 0
+      allStudents.forEach(student => {
+        if (student.student_id && student.student_id.startsWith('STU')) {
+          const number = parseInt(student.student_id.replace('STU', ''))
+          if (!isNaN(number) && number > maxNumber) {
+            maxNumber = number
+          }
+        }
+      })
+      
+      const nextNumber = maxNumber + 1
+      const nextId = `STU${nextNumber.toString().padStart(6, '0')}`
+      setNextStudentId(nextId)
+    } catch (error) {
+      console.error('Error fetching next student ID:', error)
+      setNextStudentId('STU000001') // Default fallback
+    } finally {
+      setLoadingStudentId(false)
+    }
+  }
   const fetchCourses = async () => {
     try {
       const response = await coursesAPI.getAll({ limit: 100 })
@@ -276,17 +311,22 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   Student ID
                 </label>
                 <div className="relative">
+                  {mode === 'create' && loadingStudentId && (
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      <LoadingSpinner size="sm" />
+                    </div>
+                  )}
                   <input
                     {...register('studentId')}
                     type="text"
                     disabled={true}
-                    className="input font-mono bg-gray-50 cursor-not-allowed"
-                    placeholder={mode === 'create' ? 'Auto-generated (STU000001)' : student?.student_id || 'Loading...'}
-                    value={mode === 'create' ? '' : student?.student_id || ''}
+                    className={`input font-mono bg-gray-50 cursor-not-allowed ${mode === 'create' && loadingStudentId ? 'pl-10' : ''}`}
+                    placeholder={mode === 'create' ? (loadingStudentId ? 'Generating...' : `Will be: ${nextStudentId}`) : student?.student_id || 'Loading...'}
+                    value={mode === 'create' ? (loadingStudentId ? '' : nextStudentId) : student?.student_id || ''}
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  {mode === 'create' ? 'Student ID will be automatically generated' : 'Student ID cannot be changed'}
+                  {mode === 'create' ? `Next available ID: ${nextStudentId || 'Loading...'}` : 'Student ID cannot be changed'}
                 </p>
               </div>
 
