@@ -374,15 +374,11 @@ const Dashboard = () => {
 
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick, clickable = false }) => (
     <div 
-      className={`relative group animate-fade-in transition-all duration-300 ${clickable ? 'hover:scale-105 cursor-pointer' : 'hover:scale-102'}`}
+      className={`relative group animate-fade-in transition-all duration-300 ${clickable ? 'hover:scale-105 cursor-pointer' : ''}`}
       style={{ animationDelay: `${delay}ms` }}
       onClick={clickable ? onClick : undefined}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="absolute top-2 right-2">
-          <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} 
-               title={autoRefreshEnabled ? 'Auto-refresh enabled' : 'Auto-refresh disabled'} />
-        </div>
         
         <div className="flex items-center justify-between mb-4">
           <div className={`w-12 h-12 ${color} rounded-xl flex items-center justify-center shadow-md`}>
