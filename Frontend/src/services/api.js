@@ -1,5 +1,55 @@
 import axios from 'axios'
 
+// Connection state management
+let connectionState = {
+  isConnected: true,
+  lastSuccessfulRequest: Date.now(),
+  retryCount: 0,
+  maxRetries: 3
+}
+
+// Health check function
+const checkBackendHealth = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/health`, {
+      method: 'GET',
+      timeout: 5000
+    })
+    return response.ok
+  } catch (error) {
+    return false
+  }
+}
+
+// Connection recovery function
+const attemptReconnection = async () => {
+  console.log('Attempting to reconnect to backend...')
+  
+  for (let i = 0; i < connectionState.maxRetries; i++) {
+    try {
+      const isHealthy = await checkBackendHealth()
+      if (isHealthy) {
+        connectionState.isConnected = true
+        connectionState.retryCount = 0
+        connectionState.lastSuccessfulRequest = Date.now()
+        console.log('Backend connection restored!')
+        
+        // Dispatch reconnection event
+        window.dispatchEvent(new CustomEvent('backendReconnected'))
+        return true
+      }
+    } catch (error) {
+      console.warn(`Reconnection attempt ${i + 1} failed:`, error)
+    }
+    
+    // Wait before next attempt with exponential backoff
+    const delay = Math.min(1000 * Math.pow(2, i), 10000)
+    await new Promise(resolve => setTimeout(resolve, delay))
+  }
+  
+  return false
+}
+
 const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
@@ -17,11 +67,57 @@ const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
+  retry: 3,
+  retryDelay: 1000,
 })
+
+// Request retry wrapper
+const withRetry = async (requestFn, maxRetries = 3) => {
+  let lastError
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await requestFn()
+      connectionState.isConnected = true
+      connectionState.lastSuccessfulRequest = Date.now()
+      connectionState.retryCount = 0
+      return result
+    } catch (error) {
+      lastError = error
+      
+      // Don't retry on authentication errors
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        throw error
+      }
+      
+      // Don't retry on client errors (400-499)
+      if (error.response?.status >= 400 && error.response?.status < 500) {
+        throw error
+      }
+      
+      // Connection lost
+      if (!error.response) {
+        connectionState.isConnected = false
+        connectionState.retryCount = attempt + 1
+        
+        if (attempt < maxRetries - 1) {
+          console.log(`Request failed, retrying... (${attempt + 1}/${maxRetries})`)
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          continue
+        }
+      }
+      
+      throw error
+    }
+  }
+  
+  throw lastError
+}
 
 api.interceptors.request.use(
   (config) => {
@@ -29,6 +125,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
+    // Add request timestamp for monitoring
+    config.metadata = { startTime: Date.now() }
     return config
   },
   (error) => {
@@ -37,10 +136,32 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Update connection state on successful response
+    connectionState.isConnected = true
+    connectionState.lastSuccessfulRequest = Date.now()
+    connectionState.retryCount = 0
+    
+    // Log response time for monitoring
+    if (response.config.metadata) {
+      const responseTime = Date.now() - response.config.metadata.startTime
+      if (responseTime > 5000) {
+        console.warn(`Slow API response: ${response.config.url} took ${responseTime}ms`)
+      }
+    }
+    
+    return response
+  },
   (error) => {
     if (!error.response) {
-      error.message = 'Connection failed. Please check if the backend server is running on port 5000.';
+      connectionState.isConnected = false
+      error.message = 'Connection lost. Attempting to reconnect...'
+      
+      // Attempt automatic reconnection for connection failures
+      attemptReconnection().catch(() => {
+        console.error('Failed to reconnect to backend')
+      })
+      
       return Promise.reject(error);
     }
     
@@ -48,6 +169,7 @@ api.interceptors.response.use(
       if (!error.config?.url?.includes('/auth/login') && 
           window.location.pathname !== '/login') {
         localStorage.removeItem('token');
+        connectionState.isConnected = false
         window.location.href = '/login';
       }
     }
@@ -56,58 +178,59 @@ api.interceptors.response.use(
   }
 )
 
+// Connection monitoring
+setInterval(async () => {
+  if (!connectionState.isConnected) {
+    const isHealthy = await checkBackendHealth()
+    if (isHealthy) {
+      connectionState.isConnected = true
+      connectionState.retryCount = 0
+      window.dispatchEvent(new CustomEvent('backendReconnected'))
+    }
+  }
+}, 10000) // Check every 10 seconds
+
+// Export connection state for components to use
+export const getConnectionState = () => ({ ...connectionState })
+
 export const authAPI = {
-  login: (email, password) => api.post('/auth/login', { email, password }),
-  verify: () => api.get('/auth/verify'),
-  getProfile: () => api.get('/auth/profile'),
+  login: (email, password) => withRetry(() => api.post('/auth/login', { email, password })),
+  verify: () => withRetry(() => api.get('/auth/verify'), 2),
+  getProfile: () => withRetry(() => api.get('/auth/profile')),
 }
 
 export const studentsAPI = {
-  getAll: (params) => api.get('/students', { params }),
-  getById: (id) => api.get(`/students/${id}`),
-  create: (data) => api.post('/students', data),
-  update: (id, data) => api.put(`/students/${id}`, data),
-  delete: (id) => api.delete(`/students/${id}`),
-  getRegistrations: (id) => api.get(`/students/${id}/registrations`),
-  enrollInCourses: (id, courseIds) => api.post(`/students/${id}/enroll`, { courseIds }),
-  unenrollFromCourses: (id, registrationIds) => api.post(`/students/${id}/unenroll`, { registrationIds }),
+  getAll: (params) => withRetry(() => api.get('/students', { params })),
+  getById: (id) => withRetry(() => api.get(`/students/${id}`)),
+  create: (data) => withRetry(() => api.post('/students', data)),
+  update: (id, data) => withRetry(() => api.put(`/students/${id}`, data)),
+  delete: (id) => withRetry(() => api.delete(`/students/${id}`)),
+  getRegistrations: (id) => withRetry(() => api.get(`/students/${id}/registrations`)),
+  enrollInCourses: (id, courseIds) => withRetry(() => api.post(`/students/${id}/enroll`, { courseIds })),
+  unenrollFromCourses: (id, registrationIds) => withRetry(() => api.post(`/students/${id}/unenroll`, { registrationIds })),
 }
 
 export const coursesAPI = {
   getAll: (params) => {
-    const request = api.get('/courses', { 
+    const request = withRetry(() => api.get('/courses', { 
       params,
-      timeout: 30000
-    })
+      timeout: 15000
+    }))
     
-    return request.catch(async (error) => {
-      console.error('Courses API error:', error)
-      if (!error.response && !error.config?.__isRetryRequest) {
-        error.config = error.config || {}
-        error.config.__isRetryRequest = true
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        try {
-          return await api.request(error.config)
-        } catch (retryError) {
-          console.error('Courses API retry failed:', retryError)
-          throw retryError
-        }
-      }
-      throw error
-    })
+    return request
   },
-  getById: (id) => api.get(`/courses/${id}`),
-  create: (data) => api.post('/courses', data),
-  update: (id, data) => api.put(`/courses/${id}`, data),
-  delete: (id) => api.delete(`/courses/${id}`),
-  getRegistrations: (id) => api.get(`/courses/${id}/registrations`),
+  getById: (id) => withRetry(() => api.get(`/courses/${id}`)),
+  create: (data) => withRetry(() => api.post('/courses', data)),
+  update: (id, data) => withRetry(() => api.put(`/courses/${id}`, data)),
+  delete: (id) => withRetry(() => api.delete(`/courses/${id}`)),
+  getRegistrations: (id) => withRetry(() => api.get(`/courses/${id}/registrations`)),
 }
 
 export const registrationsAPI = {
-  getAll: (params) => api.get('/registrations', { params }),
-  create: (data) => api.post('/registrations', data),
-  update: (id, data) => api.put(`/registrations/${id}`, data),
-  delete: (id) => api.delete(`/registrations/${id}`),
+  getAll: (params) => withRetry(() => api.get('/registrations', { params })),
+  create: (data) => withRetry(() => api.post('/registrations', data)),
+  update: (id, data) => withRetry(() => api.put(`/registrations/${id}`, data)),
+  delete: (id) => withRetry(() => api.delete(`/registrations/${id}`)),
 }
 
 export default api

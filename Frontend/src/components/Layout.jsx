@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getConnectionState } from '../services/api'
 import { 
   Home, 
   BookOpen, 
@@ -24,12 +25,15 @@ import {
   Crown,
   Star,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Wifi,
+  WifiOff,
+  AlertTriangle
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const Layout = ({ children }) => {
-  const { user, logout } = useAuth()
+  const { user, logout, connectionStatus } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -39,12 +43,51 @@ const Layout = ({ children }) => {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [backendStatus, setBackendStatus] = useState('connected')
   const [profileData, setProfileData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
   const [notifications, setNotifications] = useState([])
+
+  // Monitor backend connection status
+  useEffect(() => {
+    const checkConnection = () => {
+      const connState = getConnectionState()
+      const newStatus = connState.isConnected ? 'connected' : 'disconnected'
+      
+      if (newStatus !== backendStatus) {
+        setBackendStatus(newStatus)
+        
+        if (newStatus === 'disconnected') {
+          addNotification(
+            'Connection Lost',
+            'Backend connection lost. Attempting to reconnect...',
+            'warning'
+          )
+        }
+      }
+    }
+    
+    const interval = setInterval(checkConnection, 5000)
+    
+    const handleReconnection = () => {
+      setBackendStatus('connected')
+      addNotification(
+        'Connection Restored',
+        'Backend connection has been restored successfully',
+        'success'
+      )
+    }
+    
+    window.addEventListener('backendReconnected', handleReconnection)
+    
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('backendReconnected', handleReconnection)
+    }
+  }, [backendStatus])
 
   React.useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications')
@@ -667,6 +710,16 @@ const Layout = ({ children }) => {
                 <p className="text-xs text-gray-500 font-medium">Advanced Learning Platform</p>
               </div>
             </div>
+            {backendStatus !== 'connected' && (
+              <div className="mx-4 mb-4 p-3 bg-orange-50 border border-orange-200 rounded-xl">
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  <span className="text-xs font-medium text-orange-700">
+                    {backendStatus === 'disconnected' ? 'Reconnecting...' : 'Connection Issue'}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
           <nav className="flex-1 px-6 py-6 space-y-3">
             {navigation.map((item) => {
@@ -819,6 +872,19 @@ const Layout = ({ children }) => {
             <div className="flex items-center space-x-2">
               <GraduationCap className="h-6 w-6 text-primary-600" />
               <span className="text-lg font-bold text-gray-900">SRS</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              {backendStatus === 'connected' ? (
+                <div className="flex items-center space-x-1">
+                  <Wifi className="h-4 w-4 text-green-500" />
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                </div>
+              ) : (
+                <div className="flex items-center space-x-1">
+                  <WifiOff className="h-4 w-4 text-red-500" />
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <button

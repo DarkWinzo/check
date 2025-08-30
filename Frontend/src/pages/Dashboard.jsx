@@ -68,6 +68,12 @@ const Dashboard = () => {
     lastUpdated: new Date()
   })
   const [initialStatsLoaded, setInitialStatsLoaded] = useState(false)
+  const [stableStats, setStableStats] = useState({
+    totalStudents: 0,
+    totalCourses: 0,
+    totalRegistrations: 0,
+    activeEnrollments: 0
+  })
 
   useEffect(() => {
     initializeDashboard()
@@ -164,9 +170,19 @@ const Dashboard = () => {
 
       const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
 
-      // Only update stats if this is the initial load or a manual refresh
+      const newStats = {
+        totalStudents: students.length,
+        totalCourses: courses.length,
+        totalRegistrations: registrations.length,
+        activeEnrollments: activeEnrollments
+      }
+
+      // Always update working stats for analytics
+      setStats(newStats)
+      
+      // Only update stable display stats on initial load or manual refresh
       if (!initialStatsLoaded || !silent) {
-        setStats({
+        setStableStats({
           totalStudents: students.length,
           totalCourses: courses.length,
           totalRegistrations: registrations.length,
@@ -689,7 +705,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Students"
-            value={stats.totalStudents}
+            value={stableStats.totalStudents}
             icon={Users}
             trend="up"
             trendValue={12}
@@ -700,7 +716,7 @@ const Dashboard = () => {
           />
           <StatCard
             title="Active Courses"
-            value={stats.totalCourses}
+            value={stableStats.totalCourses}
             icon={BookOpen}
             trend="up"
             trendValue={8}
@@ -711,7 +727,7 @@ const Dashboard = () => {
           />
           <StatCard
             title="Total Enrollments"
-            value={stats.totalRegistrations}
+            value={stableStats.totalRegistrations}
             icon={GraduationCap}
             trend="up"
             trendValue={15}
@@ -721,7 +737,7 @@ const Dashboard = () => {
           />
           <StatCard
             title="Active Enrollments"
-            value={stats.activeEnrollments}
+            value={stableStats.activeEnrollments}
             icon={TrendingUp}
             trend="up"
             trendValue={23}
