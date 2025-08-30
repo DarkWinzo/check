@@ -355,22 +355,6 @@ const Dashboard = () => {
     }
   }
 
-  const handleQuickAction = (action) => {
-    switch (action) {
-      case 'students':
-        navigate('/students')
-        break
-      case 'courses':
-        navigate('/courses')
-        break
-      case 'analytics':
-        // Analytics are already shown in the dashboard
-        setSelectedAnalytic('enrollment')
-        break
-      default:
-        break
-    }
-  }
 
   const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick, clickable = false }) => (
     <div 
@@ -751,9 +735,7 @@ const Dashboard = () => {
             ].map((item) => (
               <button
                 key={item.id}
-                onClick={() => {
-                  setSelectedAnalytic(item.id)
-                }}
+                onClick={() => setSelectedAnalytic(item.id)}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
                   selectedAnalytic === item.id
                     ? item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' :
@@ -795,26 +777,26 @@ const Dashboard = () => {
               description: 'Manage student profiles and enrollments',
               icon: Users,
               color: 'from-blue-500 to-blue-600',
-              action: 'students'
+              onClick: () => navigate('/students')
             },
             { 
               title: 'Course Management', 
               description: 'Create and manage course offerings',
               icon: BookOpen,
               color: 'from-green-500 to-green-600',
-              action: 'courses'
+              onClick: () => navigate('/courses')
             },
             { 
               title: 'Analytics Reports', 
               description: 'View detailed analytics and reports',
               icon: Activity,
               color: 'from-purple-500 to-purple-600',
-              action: 'analytics'
+              onClick: () => setSelectedAnalytic('enrollment')
             }
           ].map((action, index) => (
             <button
               key={index}
-              onClick={() => handleQuickAction(action.action)}
+              onClick={action.onClick}
               className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group text-left w-full hover:scale-105 transform"
             >
               <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
