@@ -326,7 +326,7 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  {mode === 'create' ? `Next available ID: ${nextStudentId || 'Loading...'}` : 'Student ID cannot be changed'}
+                  {mode === 'create' ? `Student ID will be automatically generated` : 'Student ID cannot be changed'}
                 </p>
               </div>
 
@@ -339,11 +339,11 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   <input
                     {...register('phone', {
                       validate: (value) => {
-                        if (!value) return true; // Optional field
+                        if (!value) return true; 
                         
                         const cleanPhone = value.replace(/\D/g, '');
                         if (cleanPhone.length < 10 || cleanPhone.length > 15) {
-                          return 'Please enter a valid phone number (10-15 digits)';
+                          return 'Please enter a valid phone number';
                         }
                         return true;
                       }
@@ -351,15 +351,12 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                     type="tel"
                     disabled={!isEditing}
                     className={`input pl-10 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                    placeholder="Enter phone number (e.g., +1234567890)"
+                    placeholder="Enter phone number"
                   />
                 </div>
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
                 )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Supports various formats: +1234567890, (123) 456-7890, 123-456-7890
-                </p>
               </div>
 
               <div className="lg:col-span-2">
@@ -418,7 +415,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                   <option value="male">Male</option>
                   <option value="female">Female</option>
                   <option value="other">Other</option>
-                  <option value="prefer_not_to_say">Prefer not to say</option>
                 </select>
               </div>
 
