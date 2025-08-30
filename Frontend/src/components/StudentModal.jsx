@@ -273,21 +273,53 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Student ID *
+                  Student ID
                 </label>
-                <input
-                  {...register('studentId', { required: 'Student ID is required' })}
-                  type="text"
-                  disabled={!isEditing || mode === 'edit'}
-                  className={`input font-mono ${!isEditing || mode === 'edit' ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                  placeholder="Enter student ID"
-                />
-                {errors.studentId && (
-                  <p className="mt-1 text-sm text-red-600">{errors.studentId.message}</p>
+                <div className="relative">
+                  <input
+                    {...register('studentId')}
+                    type="text"
+                    disabled={true}
+                    className="input font-mono bg-gray-50 cursor-not-allowed"
+                    placeholder={mode === 'create' ? 'Auto-generated (STU000001)' : student?.student_id || 'Loading...'}
+                    value={mode === 'create' ? '' : student?.student_id || ''}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-gray-500">
+                  {mode === 'create' ? 'Student ID will be automatically generated' : 'Student ID cannot be changed'}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    {...register('phone', {
+                      validate: (value) => {
+                        if (!value) return true; // Optional field
+                        
+                        const cleanPhone = value.replace(/\D/g, '');
+                        if (cleanPhone.length < 10 || cleanPhone.length > 15) {
+                          return 'Please enter a valid phone number (10-15 digits)';
+                        }
+                        return true;
+                      }
+                    })}
+                    type="tel"
+                    disabled={!isEditing}
+                    className={`input pl-10 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    placeholder="Enter phone number (e.g., +1234567890)"
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>
                 )}
-                {mode === 'edit' && (
-                  <p className="mt-1 text-xs text-gray-500">Student ID cannot be changed</p>
-                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Supports various formats: +1234567890, (123) 456-7890, 123-456-7890
+                </p>
               </div>
 
               <div className="lg:col-span-2">
@@ -316,22 +348,6 @@ const StudentModal = ({ isOpen, onClose, onSuccess, student, mode = 'create' }) 
                 {mode === 'edit' && (
                   <p className="mt-1 text-xs text-gray-500">Email cannot be changed</p>
                 )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    {...register('phone')}
-                    type="tel"
-                    disabled={!isEditing}
-                    className={`input pl-10 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                    placeholder="Enter phone number"
-                  />
-                </div>
               </div>
 
               <div>

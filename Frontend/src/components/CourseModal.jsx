@@ -176,13 +176,35 @@ const CourseModal = ({ isOpen, onClose, onSuccess, course, mode = 'create' }) =>
                 <div className="relative">
                   <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
-                    {...register('duration')}
+                    {...register('duration', {
+                      validate: (value) => {
+                        if (!value) return true; // Optional field
+                        
+                        const durationRegex = /^\d+\s*(month|months)$/i;
+                        if (!durationRegex.test(value.trim())) {
+                          return 'Duration must be in format: "6 months", "12 months", etc.';
+                        }
+                        
+                        const months = parseInt(value.match(/\d+/)[0]);
+                        if (months < 1 || months > 60) {
+                          return 'Duration must be between 1 and 60 months';
+                        }
+                        
+                        return true;
+                      }
+                    })}
                     type="text"
                     disabled={!isEditing}
                     className={`input pl-10 ${!isEditing ? 'bg-gray-50 cursor-not-allowed' : ''}`}
-                    placeholder="e.g., 6 months, 1 semester"
+                    placeholder="e.g., 6 months, 12 months, 24 months"
                   />
                 </div>
+                {errors.duration && (
+                  <p className="mt-1 text-sm text-red-600">{errors.duration.message}</p>
+                )}
+                <p className="mt-1 text-xs text-gray-500">
+                  Format: Number followed by "month" or "months" (e.g., "6 months", "12 months")
+                </p>
               </div>
 
               <div>

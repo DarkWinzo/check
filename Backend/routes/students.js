@@ -4,13 +4,63 @@ import bcrypt from 'bcryptjs';
 import { Student, User, Registration, Course, DATABASE } from '../config/database.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
+// Helper function to generate next student ID
+const generateStudentId = async () => {
+  try {
+    const lastStudent = await Student.findOne({
+      order: [['student_id', 'DESC']],
+      where: {
+        student_id: {
+          [DATABASE.Sequelize.Op.like]: 'STU%'
+        }
+      }
+    });
+
+    if (!lastStudent) {
+      return 'STU000001';
+    }
+
+    const lastId = lastStudent.student_id;
+    const numericPart = parseInt(lastId.replace('STU', ''));
+    const nextNumber = numericPart + 1;
+    
+    return `STU${nextNumber.toString().padStart(6, '0')}`;
+  } catch (error) {
+    console.error('Error generating student ID:', error);
+    return `STU${Date.now().toString().slice(-6)}`;
+  }
+};
+
+// Phone number validation function
+const validatePhoneNumber = (phone) => {
+  if (!phone) return true; // Phone is optional
+  
+  // Remove all non-digit characters for validation
+  const cleanPhone = phone.replace(/\D/g, '');
+  
+  // Check various formats:
+  // 10 digits: 1234567890
+  // 11 digits with country code: 11234567890
+  // International format with +: +1234567890
+  if (cleanPhone.length >= 10 && cleanPhone.length <= 15) {
+    return true;
+  }
+  
+  return false;
+};
+
 const router = express.Router();
 
 router.post('/', authenticateToken, requireRole(['admin']), [
   body('firstName').trim().isLength({ min: 1 }).withMessage('First name is required'),
   body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required'),
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('studentId').trim().isLength({ min: 1 }).withMessage('Student ID is required')
+  body('phone').optional().custom((value) => {
+    if (value && !validatePhoneNumber(value)) {
+      throw new Error('Please enter a valid phone number (10-15 digits)');
+    }
+    return true;
+  })
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -22,7 +72,6 @@ router.post('/', authenticateToken, requireRole(['admin']), [
       firstName,
       lastName,
       email,
-      studentId,
       phone,
       dateOfBirth,
       address,
@@ -33,15 +82,8 @@ router.post('/', authenticateToken, requireRole(['admin']), [
     const transaction = await DATABASE.transaction();
 
     try {
-      const existingStudent = await Student.findOne({
-        where: { student_id: studentId },
-        transaction
-      });
-
-      if (existingStudent) {
-        await transaction.rollback();
-        return res.status(400).json({ message: 'Student ID already exists' });
-      }
+      // Generate unique student ID
+      const studentId = await generateStudentId();
 
       const existingEmail = await Student.findOne({
         where: { email },

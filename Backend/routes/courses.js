@@ -3,6 +3,22 @@ import { body, validationResult } from 'express-validator';
 import { Course, Registration, Student, DATABASE } from '../config/database.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 
+// Duration validation function
+const validateDuration = (duration) => {
+  if (!duration) return true; // Duration is optional
+  
+  // Check if duration follows the format: number + "month" or "months"
+  const durationRegex = /^\d+\s*(month|months)$/i;
+  
+  if (!durationRegex.test(duration.trim())) {
+    return false;
+  }
+  
+  // Extract the number and validate it's reasonable (1-60 months)
+  const months = parseInt(duration.match(/\d+/)[0]);
+  return months >= 1 && months <= 60;
+};
+
 const router = express.Router();
 
 router.get('/', authenticateToken, async (req, res) => {
@@ -109,7 +125,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
 router.post('/', authenticateToken, requireRole(['admin']), [
   body('courseCode').trim().isLength({ min: 1 }),
   body('courseName').trim().isLength({ min: 1 }),
-  body('duration').optional().trim(),
+  body('duration').optional().custom((value) => {
+    if (value && !validateDuration(value)) {
+      throw new Error('Duration must be in format: "6 months", "12 months", etc. (1-60 months)');
+    }
+    return true;
+  }),
   body('maxStudents').isInt({ min: 1 })
 ], async (req, res) => {
   try {
