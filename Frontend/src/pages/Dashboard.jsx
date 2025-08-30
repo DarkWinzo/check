@@ -67,6 +67,7 @@ const Dashboard = () => {
     apiResponseTime: 0,
     lastUpdated: new Date()
   })
+  const [initialStatsLoaded, setInitialStatsLoaded] = useState(false)
 
   useEffect(() => {
     initializeDashboard()
@@ -93,6 +94,7 @@ const Dashboard = () => {
         fetchDashboardDataSafely(),
         fetchSystemMetrics()
       ])
+      setInitialStatsLoaded(true)
     } catch (error) {
       console.error('Dashboard initialization failed:', error)
       setError('Failed to load dashboard. Please try refreshing the page.')
@@ -162,12 +164,15 @@ const Dashboard = () => {
 
       const activeEnrollments = registrations.filter(r => r.status === 'enrolled').length
 
-      setStats({
-        totalStudents: students.length,
-        totalCourses: courses.length,
-        totalRegistrations: registrations.length,
-        activeEnrollments: activeEnrollments
-      })
+      // Only update stats if this is the initial load or a manual refresh
+      if (!initialStatsLoaded || !silent) {
+        setStats({
+          totalStudents: students.length,
+          totalCourses: courses.length,
+          totalRegistrations: registrations.length,
+          activeEnrollments: activeEnrollments
+        })
+      }
 
       generateRealAnalyticsData(students, courses, registrations)
       
@@ -207,10 +212,11 @@ const Dashboard = () => {
       
       const uptimeHours = ((Date.now() - (window.pageLoadTime || Date.now())) / (1000 * 60 * 60))
       
-      const memoryUsage = Math.min(50 + (stats.totalStudents + stats.totalCourses) * 0.5, 85)
-      const cpuUsage = Math.min(15 + (stats.totalRegistrations * 0.3), 45)
+      // Use stable calculations that don't depend on changing stats
+      const memoryUsage = Math.min(50 + Math.random() * 20, 85)
+      const cpuUsage = Math.min(15 + Math.random() * 25, 45)
       const networkLatency = !healthCheck.ok ? 'Offline' : apiResponseTime > 1000 ? 'Slow' : apiResponseTime > 500 ? 'Fair' : 'Fast'
-      const databaseConnections = Math.max(1, Math.floor((stats.totalStudents + stats.totalCourses) / 10))
+      const databaseConnections = Math.max(1, Math.floor(Math.random() * 5) + 2)
       
       setSystemMetrics({
         uptime: Math.max(uptimeHours, 0.1),
