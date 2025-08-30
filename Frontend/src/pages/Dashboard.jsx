@@ -657,10 +657,10 @@ const Dashboard = () => {
     )
   }
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 md:p-6">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 md:space-y-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
@@ -678,17 +678,17 @@ const Dashboard = () => {
         )}
         
         <div className="text-center">
-          <div className="flex items-center justify-center space-x-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-              <Activity className="h-8 w-8 text-white" />
+          <div className="flex items-center justify-center space-x-2 sm:space-x-3 mb-3 sm:mb-4">
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg">
+              <Activity className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">Dashboard</h1>
           </div>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-lg md:text-xl text-gray-600 px-4">
             Welcome back, {user?.email?.split('@')[0]}! Here's your overview
           </p>
           
-          <div className="mt-4 flex items-center justify-center space-x-2">
+          <div className="mt-3 sm:mt-4 flex items-center justify-center space-x-2">
             <div className={`w-2 h-2 rounded-full ${autoRefreshEnabled ? 'bg-green-400 animate-pulse' : 'bg-gray-300'}`} />
             <span className="text-sm text-gray-500">
               Auto-refresh {autoRefreshEnabled ? 'enabled' : 'disabled'}
@@ -702,7 +702,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <StatCard
             title="Total Students"
             value={stableStats.totalStudents}
@@ -748,7 +748,7 @@ const Dashboard = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="flex flex-wrap gap-3 justify-center">
+          <div className="flex flex-wrap gap-2 sm:gap-3 justify-center px-2">
             {[
               { id: 'enrollment', label: 'Enrollment Analytics', icon: Activity, color: 'blue' },
               { id: 'distribution', label: 'Course Distribution', icon: Activity, color: 'green' },
@@ -758,7 +758,7 @@ const Dashboard = () => {
               <button
                 key={item.id}
                 onClick={() => setSelectedAnalytic(item.id)}
-                className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
+                className={`px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl font-semibold transition-all duration-200 flex items-center space-x-1 sm:space-x-2 hover:scale-105 transform text-xs sm:text-sm ${
                   selectedAnalytic === item.id
                     ? item.color === 'blue' ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg' :
                       item.color === 'green' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg' :
@@ -767,8 +767,13 @@ const Dashboard = () => {
                     : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md'
                 }`}
               >
-                <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <item.icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">{item.label}</span>
+                <span className="sm:hidden">
+                  {item.id === 'enrollment' ? 'Enrollment' :
+                   item.id === 'distribution' ? 'Distribution' :
+                   item.id === 'growth' ? 'Growth' : 'Status'}
+                </span>
               </button>
             ))}
           </div>
@@ -792,7 +797,7 @@ const Dashboard = () => {
           </AnalyticsCard>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {[
             { 
               title: 'Student Management', 
@@ -819,44 +824,44 @@ const Dashboard = () => {
             <button
               key={index}
               onClick={action.onClick}
-              className="bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group text-left w-full hover:scale-105 transform"
+              className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300 group text-left w-full hover:scale-105 transform"
             >
-              <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-xl flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
-                <action.icon className="h-6 w-6 text-white" />
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r ${action.color} rounded-lg sm:rounded-xl flex items-center justify-center mb-3 sm:mb-4 shadow-md group-hover:scale-110 transition-transform duration-300`}>
+                <action.icon className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-700 transition-colors duration-200">
                 {action.title}
               </h3>
-              <p className="text-gray-600 mb-4">{action.description}</p>
+              <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">{action.description}</p>
               
               <div className="flex items-center text-blue-600 font-semibold group-hover:text-blue-700 transition-colors duration-200">
-                <span>Access Now</span>
+                <span className="text-sm sm:text-base">Access Now</span>
                 <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform duration-200" />
               </div>
             </button>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-lg">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 shadow-lg">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-lg">
-                  <Server className="h-6 w-6 text-white" />
+                <div className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg sm:rounded-xl shadow-lg">
+                  <Server className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">System Status</h3>
-                  <p className="text-sm text-gray-600">Real-time system monitoring</p>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900">System Status</h3>
+                  <p className="text-xs sm:text-sm text-gray-600">Real-time system monitoring</p>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:space-x-3">
                 <div className="relative">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                   <div className="absolute inset-0 w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                 </div>
-                <div className="text-right">
+                <div className="text-left sm:text-right">
                   <div className="text-green-600 font-semibold text-sm">All Systems Operational</div>
                   <div className="text-gray-500 text-xs">
                     Last checked: {systemMetrics.lastUpdated.toLocaleTimeString()}
@@ -865,7 +870,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-green-500 rounded-lg shadow-sm">
@@ -986,7 +991,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="mt-4 sm:mt-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
               <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
@@ -1029,8 +1034,8 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="mt-6 flex items-center justify-between pt-6 border-t border-gray-200">
-              <div className="flex items-center space-x-6">
+            <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 sm:pt-6 border-t border-gray-200">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-6">
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                   <span>System healthy</span>
@@ -1045,25 +1050,32 @@ const Dashboard = () => {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
-                  className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-300 transform hover:scale-105 ${
+                  className={`px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 transform hover:scale-105 whitespace-nowrap ${
                     autoRefreshEnabled
                       ? 'bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {autoRefreshEnabled ? 'Auto-Refresh ON' : 'Auto-Refresh OFF'}
+                  <span className="hidden sm:inline">
+                    {autoRefreshEnabled ? 'Auto-Refresh ON' : 'Auto-Refresh OFF'}
+                  </span>
+                  <span className="sm:hidden">
+                    {autoRefreshEnabled ? 'Auto ON' : 'Auto OFF'}
+                  </span>
                 </button>
                 
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center space-x-2"
+                  className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg sm:rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 flex items-center justify-center space-x-1 sm:space-x-2 whitespace-nowrap"
                 >
-                  <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                  <span>{refreshing ? 'Refreshing...' : 'Refresh Now'}</span>
+                  <RefreshCw className={`h-3 w-3 sm:h-4 sm:w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span className="text-xs sm:text-sm">
+                    {refreshing ? 'Refreshing...' : 'Refresh Now'}
+                  </span>
                 </button>
               </div>
             </div>

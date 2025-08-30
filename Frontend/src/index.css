@@ -401,36 +401,61 @@
 }
 
 @media (max-width: 768px) {
-  .fixed.inset-0.z-\\[60\\] .inline-block {
+  .fixed.inset-0.z-\\[70\\] .inline-block {
     margin: 1rem;
     width: calc(100% - 2rem);
     max-width: none;
   }
   
-  .fixed.inset-0.z-\\[60\\] .p-8 {
+  .fixed.inset-0.z-\\[70\\] .p-8 {
     padding: 1.5rem;
   }
   
-  .fixed.inset-0.z-\\[60\\] .space-y-8 {
+  .fixed.inset-0.z-\\[70\\] .space-y-8 {
     gap: 1.5rem;
+  }
+  
+  .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-4 > * {
+    min-width: 0;
   }
 }
 
 @media (max-width: 640px) {
-  .fixed.inset-0.z-\\[60\\] .inline-block {
+  .fixed.inset-0.z-\\[70\\] .inline-block {
     margin: 0.5rem;
     width: calc(100% - 1rem);
   }
   
-  .fixed.inset-0.z-\\[60\\] .p-8 {
+  .fixed.inset-0.z-\\[70\\] .p-8 {
     padding: 1rem;
   }
   
-  .fixed.inset-0.z-\\[60\\] .text-2xl {
+  .fixed.inset-0.z-\\[70\\] .text-2xl {
     font-size: 1.5rem;
   }
   
-  .fixed.inset-0.z-\\[60\\] .grid-cols-2 {
+  .fixed.inset-0.z-\\[70\\] .grid-cols-2 {
     grid-template-columns: 1fr;
+  }
+  
+  .btn {
+    @apply text-xs px-3 py-2;
+  }
+  
+  .btn-primary, .btn-secondary, .btn-outline {
+    @apply h-10 py-2 px-3;
+  }
+  
+  .flex.flex-wrap.gap-2 {
+    justify-content: center;
+  }
+  
+  .flex.flex-wrap.gap-2 > button {
+    flex: 1 1 auto;
+    min-width: fit-content;
   }
 }

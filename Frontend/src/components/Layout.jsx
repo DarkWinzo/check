@@ -861,48 +861,46 @@ const Layout = ({ children }) => {
       </div>
 
       <div className="lg:pl-72">
-        <div className="lg:hidden">
-          <div className="flex items-center justify-between h-16 px-4 bg-white border-b border-gray-200">
+        <div className="lg:hidden bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between h-14 sm:h-16 px-3 sm:px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-500 hover:text-gray-600"
+              className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
             >
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <div className="flex items-center space-x-2">
-              <GraduationCap className="h-6 w-6 text-primary-600" />
-              <span className="text-lg font-bold text-gray-900">SRS</span>
+              <GraduationCap className="h-5 w-5 sm:h-6 sm:w-6 text-primary-600" />
+              <span className="text-base sm:text-lg font-bold text-gray-900">EduFlow</span>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               {backendStatus === 'connected' ? (
                 <div className="flex items-center space-x-1">
-                  <Wifi className="h-4 w-4 text-green-500" />
+                  <Wifi className="h-3 w-3 sm:h-4 sm:w-4 text-green-500" />
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
               ) : (
                 <div className="flex items-center space-x-1">
-                  <WifiOff className="h-4 w-4 text-red-500" />
+                  <WifiOff className="h-3 w-3 sm:h-4 sm:w-4 text-red-500" />
                   <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                 </div>
               )}
-            </div>
-            <div className="flex items-center space-x-2">
               <button
                 onClick={() => setShowNotifications(true)}
-                className="relative p-2 text-gray-500 hover:text-gray-600"
+                className="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
               >
-                <Bell className="h-5 w-5" />
+                <Bell className="h-4 w-4 sm:h-5 sm:w-5" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-red-500 rounded-full flex items-center justify-center">
                     <span className="text-xs font-bold text-white">{Math.min(unreadCount, 9)}</span>
                   </div>
                 )}
               </button>
               <button
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center space-x-2 p-2 text-gray-500 hover:text-gray-600"
+                className="flex items-center space-x-1 sm:space-x-2 p-1.5 sm:p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
               >
-                <div className="h-6 w-6 rounded-full bg-primary-600 flex items-center justify-center">
+                <div className="h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-primary-600 flex items-center justify-center">
                   <span className="text-xs font-medium text-white">
                     {user?.email?.charAt(0).toUpperCase()}
                   </span>
@@ -912,7 +910,7 @@ const Layout = ({ children }) => {
           </div>
         </div>
 
-        <main className="flex-1">
+        <main className="flex-1 min-h-screen">
           {children}
         </main>
       </div>
