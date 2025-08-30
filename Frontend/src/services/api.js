@@ -75,19 +75,26 @@ export const studentsAPI = {
 
 export const coursesAPI = {
   getAll: (params) => {
-    return api.get('/courses', { 
+    const request = api.get('/courses', { 
       params,
-      timeout: 45000,
-      retry: 3,
-      retryDelay: 1000
-    }).catch(async (error) => {
-      if (!error.response && error.config && !error.config.__isRetryRequest) {
-        error.config.__isRetryRequest = true;
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return api.request(error.config);
+      timeout: 30000
+    })
+    
+    return request.catch(async (error) => {
+      console.error('Courses API error:', error)
+      if (!error.response && !error.config?.__isRetryRequest) {
+        error.config = error.config || {}
+        error.config.__isRetryRequest = true
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        try {
+          return await api.request(error.config)
+        } catch (retryError) {
+          console.error('Courses API retry failed:', retryError)
+          throw retryError
+        }
       }
-      throw error;
-    });
+      throw error
+    })
   },
   getById: (id) => api.get(`/courses/${id}`),
   create: (data) => api.post('/courses', data),

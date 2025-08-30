@@ -27,9 +27,15 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      const response = await authAPI.verify()
+      const response = await Promise.race([
+        authAPI.verify(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth verification timeout')), 10000)
+        )
+      ])
       setUser(response.data.user)
     } catch (error) {
+      console.error('Auth verification failed:', error)
       localStorage.removeItem('token')
     } finally {
       setLoading(false)

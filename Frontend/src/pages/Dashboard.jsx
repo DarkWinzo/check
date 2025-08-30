@@ -47,6 +47,8 @@ const Dashboard = () => {
     activeEnrollments: 0
   })
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [retryCount, setRetryCount] = useState(0)
   const [refreshing, setRefreshing] = useState(false)
   const [analyticsData, setAnalyticsData] = useState({
     enrollmentTrends: [],
@@ -67,14 +69,12 @@ const Dashboard = () => {
   })
 
   useEffect(() => {
-    fetchDashboardData()
-    fetchSystemMetrics()
+    initializeDashboard()
     
     let interval
     if (autoRefreshEnabled) {
       interval = setInterval(() => {
-        fetchDashboardData(true)
-        fetchSystemMetrics(true)
+        fetchDashboardDataSafely(true)
       }, 30000)
     }
     
@@ -85,17 +85,76 @@ const Dashboard = () => {
     }
   }, [autoRefreshEnabled])
 
-  const fetchDashboardData = async (silent = false) => {
+  const initializeDashboard = async () => {
     try {
-      if (!silent) {
-        setLoading(true)
-      }
-      
-      const [studentsRes, coursesRes, registrationsRes] = await Promise.all([
-        studentsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { students: [] } })),
-        coursesAPI.getAll({ limit: 1000 }).catch(() => ({ data: { courses: [] } })),
-        registrationsAPI.getAll({ limit: 1000 }).catch(() => ({ data: { registrations: [] } }))
+      setLoading(true)
+      setError(null)
+      await Promise.all([
+        fetchDashboardDataSafely(),
+        fetchSystemMetrics()
       ])
+    } catch (error) {
+      console.error('Dashboard initialization failed:', error)
+      setError('Failed to load dashboard. Please try refreshing the page.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fetchDashboardDataSafely = async (silent = false) => {
+    const maxRetries = 3
+    let currentRetry = 0
+    
+    const attemptFetch = async () => {
+      try {
+        await fetchDashboardData(silent)
+        setError(null)
+        setRetryCount(0)
+      } catch (error) {
+        currentRetry++
+        console.error(`Dashboard fetch attempt ${currentRetry} failed:`, error)
+        
+        if (currentRetry < maxRetries) {
+          const delay = Math.min(1000 * Math.pow(2, currentRetry - 1), 5000)
+          await new Promise(resolve => setTimeout(resolve, delay))
+          return attemptFetch()
+        } else {
+          setRetryCount(currentRetry)
+          if (!silent) {
+            setError('Unable to load dashboard data. Please check your connection.')
+          }
+          throw error
+        }
+      }
+    }
+    
+    return attemptFetch()
+  }
+  const fetchDashboardData = async (silent = false) => {
+    const timeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 15000)
+    )
+    
+    try {
+      const fetchPromises = [
+        Promise.race([studentsAPI.getAll({ limit: 1000 }), timeout])
+          .catch(error => {
+            console.warn('Students API failed:', error)
+            return { data: { students: [] } }
+          }),
+        Promise.race([coursesAPI.getAll({ limit: 1000 }), timeout])
+          .catch(error => {
+            console.warn('Courses API failed:', error)
+            return { data: { courses: [] } }
+          }),
+        Promise.race([registrationsAPI.getAll({ limit: 1000 }), timeout])
+          .catch(error => {
+            console.warn('Registrations API failed:', error)
+            return { data: { registrations: [] } }
+          })
+      ]
+      
+      const [studentsRes, coursesRes, registrationsRes] = await Promise.all(fetchPromises)
 
       const students = studentsRes.data.students || []
       const courses = coursesRes.data.courses || []
@@ -124,13 +183,14 @@ const Dashboard = () => {
       }
       
     } catch (error) {
+      console.error('Dashboard data fetch failed:', error)
       if (!silent) {
-        toast.error('Failed to load dashboard data')
+        const message = !error.response 
+          ? 'Connection failed. Please check if the backend server is running.'
+          : 'Failed to load dashboard data. Please try again.'
+        toast.error(message)
       }
-    } finally {
-      if (!silent) {
-        setLoading(false)
-      }
+      throw error
     }
   }
 
@@ -138,14 +198,18 @@ const Dashboard = () => {
     try {
       const startTime = performance.now()
       
-      await fetch('/api/health').catch(() => {})
+      const healthCheck = await Promise.race([
+        fetch('/api/health'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Health check timeout')), 5000))
+      ]).catch(() => ({ ok: false }))
+      
       const apiResponseTime = Math.round(performance.now() - startTime)
       
       const uptimeHours = ((Date.now() - (window.pageLoadTime || Date.now())) / (1000 * 60 * 60))
       
       const memoryUsage = Math.min(50 + (stats.totalStudents + stats.totalCourses) * 0.5, 85)
       const cpuUsage = Math.min(15 + (stats.totalRegistrations * 0.3), 45)
-      const networkLatency = apiResponseTime > 1000 ? 'Slow' : apiResponseTime > 500 ? 'Fair' : 'Fast'
+      const networkLatency = !healthCheck.ok ? 'Offline' : apiResponseTime > 1000 ? 'Slow' : apiResponseTime > 500 ? 'Fair' : 'Fast'
       const databaseConnections = Math.max(1, Math.floor((stats.totalStudents + stats.totalCourses) / 10))
       
       setSystemMetrics({
@@ -159,8 +223,10 @@ const Dashboard = () => {
       })
       
     } catch (error) {
+      console.warn('System metrics fetch failed:', error)
       setSystemMetrics(prev => ({
         ...prev,
+        networkLatency: 'Offline',
         lastUpdated: new Date()
       }))
     }
@@ -273,12 +339,17 @@ const Dashboard = () => {
 
   const handleRefresh = async () => {
     setRefreshing(true)
+    setError(null)
     try {
-      await fetchDashboardData()
+      await fetchDashboardDataSafely()
       await fetchSystemMetrics()
       toast.success('Dashboard refreshed successfully!')
     } catch (error) {
-      toast.error('Failed to refresh dashboard')
+      const message = !error.response 
+        ? 'Connection failed. Please check if the backend server is running.'
+        : 'Failed to refresh dashboard. Please try again.'
+      toast.error(message)
+      setError('Refresh failed. Please try again.')
     } finally {
       setTimeout(() => setRefreshing(false), 1000)
     }
@@ -542,14 +613,65 @@ const Dashboard = () => {
         <div className="text-center">
           <LoadingSpinner size="xl" />
           <p className="mt-4 text-gray-600 text-lg">Loading Dashboard...</p>
+          {retryCount > 0 && (
+            <p className="mt-2 text-sm text-orange-600">
+              Retry attempt {retryCount}/3...
+            </p>
+          )}
         </div>
       </div>
     )
   }
 
+  if (error && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-2xl flex items-center justify-center">
+            <Activity className="h-8 w-8 text-red-600" />
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Dashboard Loading Failed</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={initializeDashboard}
+              className="btn btn-primary w-full"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn btn-outline w-full"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto space-y-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-red-700 font-medium">Dashboard Error</span>
+              </div>
+              <button
+                onClick={() => setError(null)}
+                className="text-red-600 hover:text-red-800"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-red-600 text-sm mt-1">{error}</p>
+          </div>
+        )}
+        
         <div className="text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
