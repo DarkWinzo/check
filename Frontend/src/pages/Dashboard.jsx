@@ -364,18 +364,19 @@ const Dashboard = () => {
         navigate('/courses')
         break
       case 'analytics':
-        toast.success('Analytics feature coming soon!')
+        // Analytics are already shown in the dashboard
+        setSelectedAnalytic('enrollment')
         break
       default:
         break
     }
   }
 
-  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick }) => (
+  const StatCard = ({ title, value, icon: Icon, trend, trendValue, color, delay = 0, onClick, clickable = false }) => (
     <div 
-      className="relative group animate-fade-in transition-all duration-300 hover:scale-105 cursor-pointer"
+      className={`relative group animate-fade-in transition-all duration-300 ${clickable ? 'hover:scale-105 cursor-pointer' : 'hover:scale-102'}`}
       style={{ animationDelay: `${delay}ms` }}
-      onClick={onClick}
+      onClick={clickable ? onClick : undefined}
     >
       <div className="relative bg-white rounded-2xl p-6 border border-gray-200 shadow-lg hover:shadow-xl transition-all duration-300">
         <div className="absolute top-2 right-2">
@@ -404,7 +405,9 @@ const Dashboard = () => {
           </div>
         </div>
         
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        {clickable && (
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        )}
       </div>
     </div>
   )
@@ -706,7 +709,8 @@ const Dashboard = () => {
             trendValue={12}
             color="bg-gradient-to-r from-blue-500 to-blue-600"
             delay={0}
-            onClick={() => handleQuickAction('students')}
+            onClick={() => navigate('/students')}
+            clickable={true}
           />
           <StatCard
             title="Active Courses"
@@ -716,7 +720,8 @@ const Dashboard = () => {
             trendValue={8}
             color="bg-gradient-to-r from-green-500 to-green-600"
             delay={100}
-            onClick={() => handleQuickAction('courses')}
+            onClick={() => navigate('/courses')}
+            clickable={true}
           />
           <StatCard
             title="Total Enrollments"
@@ -726,7 +731,7 @@ const Dashboard = () => {
             trendValue={15}
             color="bg-gradient-to-r from-purple-500 to-purple-600"
             delay={200}
-            onClick={() => handleRefresh()}
+            clickable={false}
           />
           <StatCard
             title="Active Enrollments"
@@ -736,7 +741,7 @@ const Dashboard = () => {
             trendValue={23}
             color="bg-gradient-to-r from-pink-500 to-pink-600"
             delay={300}
-            onClick={() => handleRefresh()}
+            clickable={false}
           />
         </div>
 
@@ -752,7 +757,6 @@ const Dashboard = () => {
                 key={item.id}
                 onClick={() => {
                   setSelectedAnalytic(item.id)
-                  fetchDashboardData(true)
                 }}
                 className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 hover:scale-105 transform ${
                   selectedAnalytic === item.id
