@@ -288,7 +288,7 @@ const Courses = () => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="p-6 space-y-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-3 mb-2">
@@ -549,8 +549,8 @@ const Courses = () => {
         </div>
       )}
 
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+      {pagination.totalPages > 1 && courses.length > 0 && (
+        <div className="flex items-center justify-between bg-white rounded-2xl p-6 shadow-lg border border-gray-100 mx-2">
           <div className="text-sm text-gray-700">
             Showing <span className="font-semibold">{((pagination.currentPage - 1) * 12) + 1}</span> to{' '}
             <span className="font-semibold">
